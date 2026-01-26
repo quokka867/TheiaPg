@@ -15,7 +15,5 @@ extern VOID TheiaEntry(VOID);
 --*/
 VOID ImgEntry(VOID)
 {
-    g_pStackAddrRetAddrImgEntry = _AddressOfReturnAddress();
-
     TheiaEntry();
 }

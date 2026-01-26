@@ -394,9 +394,7 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                             //
     PKDDEBUGGER_DATA64 pKdDebuggerDataBlockDec = NULL;                                                                                                                      //
                                                                                                                                                                             //
-    PVOID(__fastcall* pExFreePoolWithTag)(PVOID P, ULONG32 Tag) = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);                                                         //
-                                                                                                                                                                            //
-    // ======================================================================================================================================================================++    
+    // =====================================================================================================================================================================++    
                                                                                                                                                                               
     if (g_CompleteInitTheiaCtx)
     {
@@ -412,20 +410,20 @@ VOID InitTheiaContext(VOID)
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
 
-    // AllocateTheiaCtx ===============================================================================================================================================++
-                                                                                                                                                                       //
-    pExAllocatePool2 = (PVOID)MmGetSystemRoutineAddress(&StrExAllocatePool2);                                                                                          //
-                                                                                                                                                                       //                                                                                                                                                          
-    g_pTheiaCtx = (PTHEIA_CONTEXT)pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$'); //
-                                                                                                                                                                       //
-    if (!g_pTheiaCtx)                                                                                                                                                  //
-    {                                                                                                                                                                  //
-        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for gTheiaCtx\n");                                                                                      //
-                                                                                                                                                                       //
-        DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                              //
-    }                                                                                                                                                                  //
-                                                                                                                                                                       //
-    // ================================================================================================================================================================++
+    // AllocateTheiaCtx =========================================================================================================================================================++
+                                                                                                                                                                                 //
+    pExAllocatePool2 = (PVOID)MmGetSystemRoutineAddress(&StrExAllocatePool2);                                                                                                    //
+                                                                                                                                                                                 //                                                                                                                                                          
+    g_pTheiaCtx = (PTHEIA_CONTEXT)pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), EX_GEN_ALLOC_TAG); //
+                                                                                                                                                                                 //
+    if (!g_pTheiaCtx)                                                                                                                                                            //
+    {                                                                                                                                                                            //
+        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for gTheiaCtx\n");                                                                                                //
+                                                                                                                                                                                 //
+        DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                                        //
+    }                                                                                                                                                                            //
+                                                                                                                                                                                 //
+    // ==========================================================================================================================================================================++
 
     //
     // Initialization A2-Block
@@ -595,6 +593,8 @@ VOID InitTheiaContext(VOID)
 
     g_pTheiaCtx->pObfDereferenceObject           = MmGetSystemRoutineAddress(&StrObfDereferenceObject);
 
+    g_pTheiaCtx->pExFreePoolWithTag              = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);
+
     //
     // Initialization A5-Block
     //                                                
@@ -632,7 +632,7 @@ VOID InitTheiaContext(VOID)
     //                                                                                                                                                                                                                                                              // 
                                                                                                                                                                                                                                                                     //
     pKeCapturePersistentThreadState = MmGetSystemRoutineAddress(&StrKeCapturePersistentThreadState);                                                                                                                                                                //
-                                                                                                                                                                                                                                                                 //
+                                                                                                                                                                                                                                                                    //
     pKeCapturePersistentThreadState = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, pKeCapturePersistentThreadState, &INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG, &INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG_MASK, &StopSig, sizeof StopSig); //
                                                                                                                                                                                                                                                                     //
     if (!pKeCapturePersistentThreadState)                                                                                                                                                                                                                           //
@@ -679,7 +679,7 @@ VOID InitTheiaContext(VOID)
     //                                                                                                                                                                                                                                                              //
     // =============================================================================================================================================================================================================================================================++
     
-    pExFreePoolWithTag(pKdDebuggerDataBlockDec, 'UTR$');
+    g_pTheiaCtx->pExFreePoolWithTag(pKdDebuggerDataBlockDec, EX_GEN_ALLOC_TAG);
 
     g_pTheiaCtx->CompleteSignatureTC = COMPLETE_SIGNATURE_TC;
 
@@ -701,25 +701,25 @@ VOID InitTheiaContext(VOID)
 --*/
 VOID CheckStatusTheiaCtx(VOID)
 {
-    #define ERROR_THEIA_CONTEXT_NOT_INIT 0xbb722de3UI32
+    #define ERROR_THEIA_CTX_NOT_INIT 0xbb722de3UI32
 
     if (!g_pTheiaCtx)
     {
         DbgLog("[TheiaPg <->] CheckStatusTheiaCtx: gTheiaContext is not allocate\n");
 
-        DieDispatchIntrnlError(ERROR_THEIA_CONTEXT_NOT_INIT);
+        DieDispatchIntrnlError(ERROR_THEIA_CTX_NOT_INIT);
     }
     else if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC)
     {
         DbgLog("[TheiaPg <->] CheckStatusTheiaCtx: gTheiaContext is not complete\n");
 
-        DieDispatchIntrnlError(ERROR_THEIA_CONTEXT_NOT_INIT);
+        DieDispatchIntrnlError(ERROR_THEIA_CTX_NOT_INIT);
     }
     else if (g_pTheiaCtx->TheiaMetaDataBlock.CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB)
     {
         DbgLog("[TheiaPg <->] CheckStatusTheiaCtx: gTheiaMetaDataBlock is not complete\n");
 
-        DieDispatchIntrnlError(ERROR_THEIA_CONTEXT_NOT_INIT);
+        DieDispatchIntrnlError(ERROR_THEIA_CTX_NOT_INIT);
     }
     else { VOID; } ///< For clarity.
  

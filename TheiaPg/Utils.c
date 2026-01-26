@@ -107,8 +107,10 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
     #define SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID 1
 
     #define SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2 2
+
+    #define SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG 3
   
-    PVOID(__fastcall *SpiiCtx[3])(PVOID, ...) = { 0 }; ///< Routine is critical, so it should not depend on gTheiaCtx.
+    PVOID(__fastcall *SpiiCtx[4])(PVOID, ...) = { 0 }; ///< Routine is critical, so it should not depend on gTheiaCtx.
 
     PTHEIA_METADATA_BLOCK pLocalTMDB = g_pSpiiNonLargePage;
 
@@ -121,6 +123,8 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
     UNICODE_STRING StrMmIsNonPagedSystemAddressValid = { 0 };
 
     UNICODE_STRING StrExAllocatePool2 = { 0 };
+
+    UNICODE_STRING StrExFreePoolWithTag = { 0 };
 
     USHORT LenSIG = 0UI16;
 
@@ -192,6 +196,14 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
         StrExAllocatePool2.MaximumLength = (StrExAllocatePool2.Length + 2);
 
         SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2] = MmGetSystemRoutineAddress(&StrExAllocatePool2);
+
+        StrExFreePoolWithTag.Buffer = L"ExFreePoolWithTag";
+
+        StrExFreePoolWithTag.Length = (USHORT)(wcslen(StrExFreePoolWithTag.Buffer) * 2);
+
+        StrExFreePoolWithTag.MaximumLength = (StrExFreePoolWithTag.Length + 2);
+
+        SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);
     }
 
     if (IsLocalTMDB)
@@ -449,9 +461,9 @@ NoBaseAddrModule:
 
     if (FlagsExecute & SPII_NO_OPTIONAL)
     {
-        pSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID,...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');
+        pSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID,...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), EX_GEN_ALLOC_TAG);
 
-        pMaskSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID, ...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');
+        pMaskSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID, ...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), EX_GEN_ALLOC_TAG);
 
         if (!(pSIGAlignment && pMaskSIGAlignment))
         {
@@ -591,10 +603,10 @@ ExitJmp:
     if (FlagsExecute & SPII_NO_OPTIONAL)
     {
         if (pSIGAlignment && pMaskSIGAlignment)
-        {
-            ExFreePool(pSIGAlignment);
+        {  
+            (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] : g_pTheiaCtx->pExFreePoolWithTag)(pSIGAlignment, EX_GEN_ALLOC_TAG);
 
-            ExFreePool(pMaskSIGAlignment);
+            (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] : g_pTheiaCtx->pExFreePoolWithTag)(pMaskSIGAlignment, EX_GEN_ALLOC_TAG);
         }
     }
 

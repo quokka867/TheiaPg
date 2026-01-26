@@ -1,4 +1,5 @@
 #pragma once
+
 #include "LinkHeader.h"
 
 #define DEBUG_H 1
@@ -16,3 +17,5 @@
 #define DbgText(a1) VOID
 
 #endif
+
+#define EX_GEN_ALLOC_TAG ((ULONG32)((ULONG64)_AddressOfReturnAddress() + (ULONG64)_ReturnAddress()) ^ 0xecd64bc1UI32)

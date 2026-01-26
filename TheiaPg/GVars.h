@@ -4,8 +4,6 @@
 
 extern PTHEIA_CONTEXT g_pTheiaCtx;
 
-extern PVOID g_pStackAddrRetAddrImgEntry;
-
 extern BOOLEAN g_CompleteInitTheiaCtx;
 
 

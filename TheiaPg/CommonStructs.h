@@ -715,7 +715,8 @@ typedef struct _THEIA_CONTEXT
     PVOID(__stdcall* pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);
     BOOLEAN(__fastcall* pPsIsSystemThread)(PETHREAD Thread);
     LONG_PTR(__fastcall* pObfDereferenceObject)(PVOID Object);
-    
+    PVOID(__fastcall* pExFreePoolWithTag)(PVOID P, ULONG Tag);
+  
     //
     // A5-Block.
     //
