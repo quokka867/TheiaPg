@@ -76,7 +76,7 @@ static PVOID BuilderStubApcRoutine(IN PVOID pRoutine)
         DieDispatchIntrnlError(ERROR_BUILD_STUB_APC_ROUTINE);
     }
 
-    HrdPatchAttributesInputPte(0UI64, 0x800UI64, pPageStub);
+    HrdPatchAttributesInputPte(0UI64, 0x02UI64, pPageStub);
 
     HrdPatchAttributesInputPte(0x7FFFFFFFFFFFFFFFUI64, 0UI64, pPageStub);
 

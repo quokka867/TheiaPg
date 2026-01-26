@@ -52,9 +52,9 @@ BOOLEAN _IsAddressSafe(IN PVOID pCheckAddress)
 {
     #define ERROR_IS_SAFE_ADDRESS 0x43f77387UI32
 
-    PKLDR_DATA_TABLE_ENTRY pCurrentNode = *(PVOID*)PsLoadedModuleList; ///< Skip dummy node.
-
     CheckStatusTheiaCtx();
+
+    PKLDR_DATA_TABLE_ENTRY pCurrentNode = *(PVOID*)PsLoadedModuleList; ///< Skip dummy node.
 
     if (!((__readcr8() <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pCheckAddress) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pCheckAddress)))
     {
@@ -149,6 +149,15 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
 
     if (IsLocalCtx)
     {
+        if (!pLocalTMDB)
+        {
+            DbgLog("[TheiaPg <->] DieDispatchIntrnlError: Page for LocalTMDB is not allocate\n");
+
+            goto ExitJmp;
+        }
+
+        InitTheiaMetaDataBlock(pLocalTMDB);
+
         StrMmIsAddressValid.Buffer = L"MmIsAddressValid";
 
         StrMmIsAddressValid.Length = (USHORT)(wcslen(StrMmIsAddressValid.Buffer) * 2);
@@ -164,15 +173,6 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
         StrMmIsNonPagedSystemAddressValid.MaximumLength = (StrMmIsNonPagedSystemAddressValid.Length + 2);
 
         SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] = MmGetSystemRoutineAddress(&StrMmIsNonPagedSystemAddressValid);
-
-        if (!pLocalTMDB)
-        {
-            DbgLog("[TheiaPg <->] DieDispatchIntrnlError: Page for LocalTMDB is not allocate\n");
-
-            goto ExitJmp;
-        }
-
-        InitTheiaMetaDataBlock(pLocalTMDB);
     }
 
     if (FlagsExecute & SPII_SCAN_CALLER_INPUT_ADDRESS)
@@ -417,7 +417,7 @@ NoRetBaseAddrModule:
   
     if (((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_magic == 0x5A4DUI16)
     {
-        if (*((PUSHORT)(((PUCHAR)pBaseAddrModule) + ((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_lfanew)) == 0x4550I32)
+        if (*((PUSHORT)(((PUCHAR)pBaseAddrModule) + ((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_lfanew)) == 0x4550UI32)
         {
             SizeOfOptionalHeaderNT = (((PIMAGE_FILE_HEADER)&((PIMAGE_NT_HEADERS64)(((PUCHAR)pBaseAddrModule) + ((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_lfanew))->FileHeader)->SizeOfOptionalHeader);
             NumberOfSectionsNT = (((PIMAGE_FILE_HEADER)&((PIMAGE_NT_HEADERS64)(((PUCHAR)pBaseAddrModule) + ((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_lfanew))->FileHeader)->NumberOfSections);
@@ -463,7 +463,7 @@ NoRetBaseAddrModule:
     }
 
 
-    for (ULONG32 i = 0UI32, j = 0UI32; i < (pCurrentSectionHeader->Misc.VirtualSize - ((FlagsExecute & SPII_NO_OPTIONAL) ? LenSIG : 6UI16)); ++i, ++pBaseAddrExeRegion)
+    for (ULONG32 i = 0UI32, j = 0UI32; i < (pCurrentSectionHeader->Misc.VirtualSize - ((FlagsExecute & SPII_NO_OPTIONAL) ? LenSIG : 5UI16)); ++i, ++pBaseAddrExeRegion)
     {
         if (FlagsExecute & SPII_NO_OPTIONAL)
         {
@@ -502,7 +502,7 @@ NoRetBaseAddrModule:
         }
         else if (FlagsExecute & SPII_SCAN_CALLER_INPUT_ADDRESS)
         {
-            if (!((ULONG64)pBaseAddrExeRegion % 64)) { _mm_prefetch(((ULONG64)pBaseAddrExeRegion & ~0x3F), PF_NON_TEMPORAL_LEVEL_ALL); }
+            _mm_prefetch(((ULONG64)pBaseAddrExeRegion & ~0x3F), PF_NON_TEMPORAL_LEVEL_ALL);
             
             if (*pBaseAddrExeRegion == 0xE8UI8)
             {

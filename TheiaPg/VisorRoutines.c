@@ -13,6 +13,8 @@
 --*/
 volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
 {
+    CheckStatusTheiaCtx();
+
     UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
 
     UCHAR ReasonDetect1[] = { "PG DeferredContext" };
@@ -32,8 +34,6 @@ volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
     DataIndpnRWVMem.pIoBuffer = &RetOpcode;
 
     DataIndpnRWVMem.LengthRW = 1UI64;
-
-    CheckStatusTheiaCtx();
 
     pDpcListHead[DPC_NORMAL] = (PVOID)__readgsqword((g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_DpcData0_OFFSET)); ///< Get address first node DPC_NORMAL_QUEUE.
 
@@ -103,6 +103,8 @@ volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
 --*/
 volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
 {
+    CheckStatusTheiaCtx();
+
     UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
 
     UCHAR ReasonDetect1[] = { "PG DeferredContext" };
@@ -118,8 +120,6 @@ volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
     PKTIMER pCurrentKtimer = NULL;
 
     PKDPC pCurrKdpc = NULL;
-
-    CheckStatusTheiaCtx();
 
     pCurrentKTimerTableEntry = (PKTIMER_TABLE_ENTRY) & (((PKTIMER_TABLE)(__readgsqword(0x20I32) + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_TimerTable))->TimerEntries);
 

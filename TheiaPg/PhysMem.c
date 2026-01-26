@@ -30,6 +30,7 @@ VOID HrdIndpnRWVMemory(IN OUT PINDPN_RW_V_MEMORY_DATA pInputData)
 
     #define ERROR_WRITE_V_MEMORY 0x0fa7049fUI32
 	
+	CheckStatusTheiaCtx();
 
 	//
 	// Execution barriers are required to implement recursive IPI (All including self) initiation.
@@ -66,8 +67,6 @@ VOID HrdIndpnRWVMemory(IN OUT PINDPN_RW_V_MEMORY_DATA pInputData)
 	
 
 	PVOID pResultVa = NULL;
-
-	CheckStatusTheiaCtx();
 
 	if (!(_interlockedbittestandset(&SynchBarrier0, 0I32)))
 	{
@@ -276,9 +275,9 @@ VOID HrdPatchAttributesInputPte(IN ULONG64 AndMask, IN ULONG64 OrMask, IN OUT PV
 {
     #define ERROR_PATCH_PTE_ATTRIBUTES 0xdec74dfaUI32
 
-	PMMPTE_HARDWARE pPteInputVa = NULL;
-
 	CheckStatusTheiaCtx();
+
+	PMMPTE_HARDWARE pPteInputVa = NULL;
 
 	if ((!AndMask && !OrMask) || (AndMask && OrMask))
 	{
@@ -319,9 +318,9 @@ PMMPTE_HARDWARE HrdGetPteInputVa(IN PVOID pVa)
 {
     #define ERROR_GET_PTE_VA 0x11ecdf34UI32
 
-	PMMPTE_HARDWARE pPteInputVa = NULL;
-
 	CheckStatusTheiaCtx();
+
+	PMMPTE_HARDWARE pPteInputVa = NULL;
 
 	if (!pVa || !((__readcr8() <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pVa) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pVa)))
 	{

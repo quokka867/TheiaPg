@@ -49,6 +49,8 @@ VOID SearchKdpcInPgPrcbFields(VOID)
 {
     #define ERROR_IPI_CLEAR_PG_PRCB_FIELDS 0xcedfb673UI32
 
+	CheckStatusTheiaCtx();
+
 	ULONG32 GsOffsetHalReserved = NULL;
 
 	ULONG32 GsOffsetAcpiReserved = NULL;
@@ -56,8 +58,6 @@ VOID SearchKdpcInPgPrcbFields(VOID)
 	PKDPC pCurrentCheckKdpc = NULL;
 
 	BOOLEAN OldIF = FALSE;
-
-	CheckStatusTheiaCtx();
 
 	GsOffsetHalReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_HalReserved);
 
