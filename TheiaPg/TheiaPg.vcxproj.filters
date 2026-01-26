@@ -50,9 +50,6 @@
     <Filter Include="Source Files\_TheiaPg\DispatchIntrnlError\_asm\DieBugCheck">
       <UniqueIdentifier>{ad031ce0-615e-4f0e-84cb-b1202c7bb6e7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Common\SigsKRoutine">
-      <UniqueIdentifier>{3d7e065b-4a75-4fbe-8fec-2098657f8489}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Common\GVars">
       <UniqueIdentifier>{d7a1be69-9925-4171-9b4d-a199a148fd84}</UniqueIdentifier>
     </Filter>
@@ -80,6 +77,9 @@
     <Filter Include="Source Files\_TheiaPg\__InitTheiaCtx">
       <UniqueIdentifier>{5058af44-d7e6-4a9f-a596-7ca512d06a2d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_TheiaPg\__InitTheiaCtx\KMetaData">
+      <UniqueIdentifier>{c970fa82-3fea-4453-b26e-6369514b07ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImgEntry.c">
@@ -87,9 +87,6 @@
     </ClCompile>
     <ClCompile Include="VisorRoutines.c">
       <Filter>Source Files\_TheiaPg\_TheiaCore\VisorRoutines</Filter>
-    </ClCompile>
-    <ClCompile Include="SigsKRoutine.c">
-      <Filter>Source Files\Common\SigsKRoutine</Filter>
     </ClCompile>
     <ClCompile Include="GVars.c">
       <Filter>Source Files\Common\GVars</Filter>
@@ -118,6 +115,9 @@
     <ClCompile Include="PgUtils.c">
       <Filter>Source Files\_TheiaPg\_TheiaCore\PgUtils</Filter>
     </ClCompile>
+    <ClCompile Include="KMetaData.c">
+      <Filter>Source Files\_TheiaPg\__InitTheiaCtx\KMetaData</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonStructs.h">
@@ -125,9 +125,6 @@
     </ClInclude>
     <ClInclude Include="CommonMacro.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SigsKRoutine.h">
-      <Filter>Source Files\Common\SigsKRoutine</Filter>
     </ClInclude>
     <ClInclude Include="GVars.h">
       <Filter>Source Files\Common\GVars</Filter>
@@ -173,6 +170,9 @@
     </ClInclude>
     <ClInclude Include="VisorRoutines.h">
       <Filter>Source Files\_TheiaPg\_TheiaCore\VisorRoutines</Filter>
+    </ClInclude>
+    <ClInclude Include="KMetaData.h">
+      <Filter>Source Files\_TheiaPg\__InitTheiaCtx\KMetaData</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

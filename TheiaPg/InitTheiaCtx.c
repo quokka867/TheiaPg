@@ -21,7 +21,7 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
 
     #define ITMDB_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID 1
 
-    PVOID(__fastcall *ITMDBCtx[3])(PVOID, ...) = { 0 }; ///< Routine is critical, so it should not depend on gTheiaCtx.
+    PVOID(__fastcall *ITMDBCtx[2])(PVOID, ...) = { 0 }; ///< Routine is critical, so it should not depend on gTheiaCtx.
 
     UNICODE_STRING StrMmIsAddressValid = { 0 };                                                                  
     
@@ -113,12 +113,27 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         //
         pTheiaMetaDataBlock->KIEXECUTEALLDPCS_SIG = &_25h2_w11_KiExecuteAllDpcs_SIG;
         pTheiaMetaDataBlock->KIEXECUTEALLDPCS_MASK = &_25h2_w11_KiExecuteAllDpcs_MASK;
+        pTheiaMetaDataBlock->KIEXECUTEALLDPCS_HANDLER = &_25h2_w11_HandlerVsrKiExecuteAllDpcs;
+        pTheiaMetaDataBlock->KIEXECUTEALLDPCS_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrKiExecuteAllDpcs;
+        pTheiaMetaDataBlock->KIEXECUTEALLDPCS_HOOK_ALIGNMENT = 2UI32;
 
         pTheiaMetaDataBlock->KIRETIREDPCLIST_SIG = &_25h2_w11_KiRetireDpcList_SIG;
         pTheiaMetaDataBlock->KIRETIREDPCLIST_MASK = &_25h2_w11_KiRetireDpcList_MASK;
+        pTheiaMetaDataBlock->KIRETIREDPCLIST_HANDLER = &_25h2_w11_HandlerVsrKiRetireDpcList;
+        pTheiaMetaDataBlock->KIRETIREDPCLIST_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrKiRetireDpcList;
+        pTheiaMetaDataBlock->KIRETIREDPCLIST_HOOK_ALIGNMENT = 0UI32;
+
+        pTheiaMetaDataBlock->EXALLOCATEPOOL2_SIG = &_25h2_w11_ExAllocatePool2_SIG;
+        pTheiaMetaDataBlock->EXALLOCATEPOOL2_MASK = &_25h2_w11_ExAllocatePool2_MASK;
+        pTheiaMetaDataBlock->EXALLOCATEPOOL2_HANDLER = &_25h2_w11_HandlerVsrExAllocatePool2;
+        pTheiaMetaDataBlock->EXALLOCATEPOOL2_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrExAllocatePool2;
+        pTheiaMetaDataBlock->EXALLOCATEPOOL2_HOOK_ALIGNMENT = 0UI32;
 
         pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_SIG = &_25h2_w11_KiCustomRecurseRoutineX_SIG;
         pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_MASK = &_25h2_w11_KiCustomRecurseRoutineX_MASK;
+        pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_HANDLER = &_25h2_w11_HandlerVsrKiCustomRecurseRoutineX;
+        pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrKiCustomRecurseRoutineX;
+        pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_HOOK_ALIGNMENT = 0UI32;
 
         pTheiaMetaDataBlock->KIMCADEFERREDRECOVERYSERVICE_SIG = &_25h2_w11_KiMcaDeferredRecoveryService_SIG;
         pTheiaMetaDataBlock->KIMCADEFERREDRECOVERYSERVICE_MASK = &_25h2_w11_KiMcaDeferredRecoveryService_MASK;
@@ -176,7 +191,7 @@ VOID InitTheiaContext(VOID)
 
     // OtherData ==============================================================================================================++
                                                                                                                                //
-    CONST UCHAR StopSig[4] = { 0xCC,0xCC,0xCC,0xCC };                                                                          //
+    CONST UCHAR StopSig[5] = { 0xCC,0xCC,0xCC,0xCC,0xCC };                                                                     //
                                                                                                                                //
     CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG[] = { 0x48, 0xb8, 0x77, 0x72, 0xdd, 0xf3, 0xc7, 0xc6, 0x35, 0x7e };     //
     CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK[sizeof INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG] = { "xxxxxxxxxx" }; // 

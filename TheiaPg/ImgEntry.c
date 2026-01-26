@@ -11,7 +11,7 @@ extern VOID TheiaEntry(VOID);
 *
 * @param NoParams
 *
-* Description: Main entry routine TheiaPg.sys.
+* Description: Main entry routine Img-TheiaPg.sys.
 --*/
 VOID ImgEntry(VOID)
 {

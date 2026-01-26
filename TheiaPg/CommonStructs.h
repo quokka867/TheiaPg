@@ -602,16 +602,31 @@ typedef struct _THEIA_METADATA_BLOCK
     ULONG32 LDR_DllBase_OFFSET;
     ULONG32 LDR_DllName_OFFSET;
 
-    ULONG64 AlignmentBlock0[2];
+    ULONG64 Alignment0;
 
-    PVOID KIEXECUTEALLDPCS_SIG;
-    PVOID KIEXECUTEALLDPCS_MASK;
+    PVOID   KIEXECUTEALLDPCS_SIG;
+    PVOID   KIEXECUTEALLDPCS_MASK;
+    PVOID   KIEXECUTEALLDPCS_HANDLER;
+    PVOID   KIEXECUTEALLDPCS_LEN_HANDLER;
+    ULONG32 KIEXECUTEALLDPCS_HOOK_ALIGNMENT;
 
-    PVOID KIRETIREDPCLIST_SIG;
-    PVOID KIRETIREDPCLIST_MASK;
+    PVOID   KIRETIREDPCLIST_SIG;
+    PVOID   KIRETIREDPCLIST_MASK;
+    PVOID   KIRETIREDPCLIST_HANDLER;
+    PVOID   KIRETIREDPCLIST_LEN_HANDLER;
+    ULONG32 KIRETIREDPCLIST_HOOK_ALIGNMENT;
 
-    PVOID KICUSTOMRECURSEROUTINEX_SIG;
-    PVOID KICUSTOMRECURSEROUTINEX_MASK;
+    PVOID   EXALLOCATEPOOL2_SIG;
+    PVOID   EXALLOCATEPOOL2_MASK;
+    PVOID   EXALLOCATEPOOL2_HANDLER;
+    PVOID   EXALLOCATEPOOL2_LEN_HANDLER;
+    ULONG32 EXALLOCATEPOOL2_HOOK_ALIGNMENT;
+
+    PVOID   KICUSTOMRECURSEROUTINEX_SIG;
+    PVOID   KICUSTOMRECURSEROUTINEX_MASK;
+    PVOID   KICUSTOMRECURSEROUTINEX_HANDLER;
+    PVOID   KICUSTOMRECURSEROUTINEX_LEN_HANDLER;
+    ULONG32 KICUSTOMRECURSEROUTINEX_HOOK_ALIGNMENT;
 
     PVOID KIMCADEFERREDRECOVERYSERVICE_SIG;
     PVOID KIMCADEFERREDRECOVERYSERVICE_MASK;
@@ -651,18 +666,18 @@ typedef struct _THEIA_CONTEXT
     //
     PVOID pKiExecuteAllDpcs;
     PVOID pKiRetireDpcList;
-    PVOID pKiCustomRecurseRoutineX;      ///< IsPgRoutine | Callers: pKiCustomAccessRoutineX | Executed from IsrDispatchLevelExecuteCtx.
+    PVOID pKiCustomRecurseRoutineX; ///< IsPgRoutine | Callers: pKiCustomAccessRoutineX | Executed from IsrDispatchLevelExecuteCtx.
 
     //
     // The engineers of the PatchGuard component, for some reason unknown to me, did not add __noreturn for KiScanQueues/KiSchedulerDpc (Callers KiMcaDeferredRecoveryService), 
     // so 0xc3 fix.
     // 
-    // ->
+    // Example ->
     // call    ntkrnlmp!KiMcaDeferredRecoveryService (fffff8018fcace70)
     // add     rsp, 30h
     // pop     rbx
     // ret
-    // <-
+    // <- 
     //
     PVOID pKiMcaDeferredRecoveryService; ///< IsPgRoutine | Callers: KiScanQueues/KiSchedulerDpc                   | Executed from IsrDispatchLevelExecuteCtx.
 

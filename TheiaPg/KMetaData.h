@@ -2,12 +2,19 @@
 
 #include "LinkHeader.h"
 
+extern CONST UCHAR _25h2_w11_HandlerVsrKiExecuteAllDpcs[15];
 extern CONST UCHAR _25h2_w11_KiExecuteAllDpcs_SIG[];
 extern CONST UCHAR _25h2_w11_KiExecuteAllDpcs_MASK[];
 
+extern CONST UCHAR _25h2_w11_HandlerVsrKiRetireDpcList[13];
 extern CONST UCHAR _25h2_w11_KiRetireDpcList_SIG[];
 extern CONST UCHAR _25h2_w11_KiRetireDpcList_MASK[];
-							
+
+extern CONST UCHAR _25h2_w11_HandlerVsrExAllocatePool2[16];
+extern CONST UCHAR _25h2_w11_ExAllocatePool2_SIG[];
+extern CONST UCHAR _25h2_w11_ExAllocatePool2_MASK[];
+
+extern CONST UCHAR _25h2_w11_HandlerVsrKiCustomRecurseRoutineX[8];
 extern CONST UCHAR _25h2_w11_KiCustomRecurseRoutineX_SIG[];
 extern CONST UCHAR _25h2_w11_KiCustomRecurseRoutineX_MASK[];
 
@@ -34,8 +41,6 @@ extern CONST UCHAR _25h2_w11_KiDispatchCallout_MASK[];
 
 extern CONST UCHAR _25h2_w11_MmAllocateIndependentPagesEx_SIG[];
 extern CONST UCHAR _25h2_w11_MmAllocateIndependentPagesEx_MASK[];
-			
+
 extern CONST UCHAR _25h2_w11_MmFreeIndependentPages_SIG[];
 extern CONST UCHAR _25h2_w11_MmFreeIndependentPages_MASK[];
-
-

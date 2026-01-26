@@ -136,9 +136,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DispatchIntrnlError.c" />
-    <ClCompile Include="SigsKRoutine.c" />
     <ClCompile Include="GVars.c" />
     <ClCompile Include="InitTheiaCtx.c" />
+    <ClCompile Include="KMetaData.c" />
     <ClCompile Include="PhysMem.c" />
     <ClCompile Include="TheiaEntry.c" />
     <ClCompile Include="ImgEntry.c" />
@@ -152,11 +152,11 @@
     <ClInclude Include="Clacx64.h" />
     <ClInclude Include="GetIF.h" />
     <ClInclude Include="IA32.h" />
+    <ClInclude Include="KMetaData.h" />
     <ClInclude Include="PhysMem.h" />
     <ClInclude Include="InitTheiaCtx.h" />
     <ClInclude Include="DispatchIntrnlError.h" />
     <ClInclude Include="LinkHeader.h" />
-    <ClInclude Include="SigsKRoutine.h" />
     <ClInclude Include="GVars.h" />
     <ClInclude Include="CommonMacro.h" />
     <ClInclude Include="CommonStructs.h" />
