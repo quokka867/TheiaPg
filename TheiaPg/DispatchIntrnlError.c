@@ -6,7 +6,7 @@ volatile PVOID g_pDieIndirectCallBugCheck = NULL;
 
 volatile PVOID g_DieNtosHeadThreadList = NULL;
 
-volatile PVOID g_DieNonLargePage = NULL;
+volatile PVOID g_pDieNonLargePage = NULL;
 
 /*++
 * Routine: DieDispatchIntrnlError
@@ -29,9 +29,7 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 
 	PVOID DieCtx[2] = { 0 }; ///< DieRoutine is critical, so it should not depend on gTheiaCtx.
 
-	PTHEIA_METADATA_BLOCK pLocalTMDB = g_DieNonLargePage;
-
-	BOOLEAN IsLocalTMDB = FALSE;
+	PTHEIA_METADATA_BLOCK pLocalTMDB = g_pDieNonLargePage;
 
 	BOOLEAN IsLocalCtx = FALSE;
 
@@ -47,18 +45,8 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 	{
 		DbgLog("[TheiaPg <!>] DieDispatchIntrnlError: InternalCode: 0x%I32X\n", InternalCode);
 
-		if (!g_pTheiaCtx)
-		{
-			IsLocalCtx = TRUE;
-
-			IsLocalTMDB = TRUE;
-		}
-		else
-		{
-			if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; }
-
-			if (g_pTheiaCtx->TheiaMetaDataBlock.CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB) { IsLocalTMDB = TRUE; }
-		}
+		if (!g_pTheiaCtx) { IsLocalCtx = TRUE; }
+		else { if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; } }
 
 		if (IsLocalCtx)
 		{
@@ -77,10 +65,7 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 			StrKeBugCheckEx.MaximumLength = (StrKeBugCheckEx.Length + 2);
 
 			DieCtx[DIE_LOCAL_CONTEXT_KEBUGCHECKEX] = MmGetSystemRoutineAddress(&StrKeBugCheckEx);
-		}
 
-		if (IsLocalTMDB)
-		{
 			if (!pLocalTMDB)
 			{
 				DbgLog("[TheiaPg <->] DieDispatchIntrnlError: Page for LocalTMDB is not allocate\n");
@@ -89,13 +74,6 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 			}
 
 			InitTheiaMetaDataBlock(pLocalTMDB);
-
-			if (pLocalTMDB->CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB)
-			{
-				DbgLog("[TheiaPg <->] DieDispatchIntrnlError: LocalTMDB is not complete\n");
-
-				goto InitDeadLock;
-			}
 		}
 
 		RelatedDataSPIR[SPIR_INDEX_OPTIONAL_DATA_SCIA] = (IsLocalCtx ? DieCtx[DIE_LOCAL_CONTEXT_KEBUGCHECKEX] : g_pTheiaCtx->pKeBugCheckEx);
@@ -111,9 +89,9 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 
 		DbgLog("[TheiaPg <!>] DieDispatchIntrnlError: DieIndirectCallBugCheck: 0x%I64X\n", g_pDieIndirectCallBugCheck);
 
-		g_DieNtosHeadThreadList = ((PUCHAR)PsInitialSystemProcess + (IsLocalTMDB ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+		g_DieNtosHeadThreadList = ((PUCHAR)PsInitialSystemProcess + (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
 
-		DieBugCheck((IsLocalTMDB ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
+		DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
 	}
 	else
 	{
@@ -133,7 +111,7 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 
 			SkipInitDeadLock:
 
-				DieBugCheck((IsLocalTMDB ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
+				DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
 			}
 
 			_mm_pause();

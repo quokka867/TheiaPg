@@ -156,7 +156,6 @@
     <ClInclude Include="InitTheiaCtx.h" />
     <ClInclude Include="DispatchIntrnlError.h" />
     <ClInclude Include="LinkHeader.h" />
-    <ClInclude Include="SetSPx64.h" />
     <ClInclude Include="SigsKRoutine.h" />
     <ClInclude Include="GVars.h" />
     <ClInclude Include="CommonMacro.h" />
@@ -173,7 +172,6 @@
     <MASM Include="Clacx64.asm" />
     <MASM Include="GetIF.asm" />
     <MASM Include="DieBugCheck.asm" />
-    <MASM Include="SetSPx64.asm" />
     <MASM Include="Stacx64.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

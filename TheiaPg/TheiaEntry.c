@@ -90,7 +90,7 @@ VOID TheiaEntry(VOID)
 
     CONST UCHAR RetOpcode = 0xC3UI8;
   
-    CONST UCHAR StopSig[4] = { 0xCC,0xCC,0xCC,0xCC };
+    CONST UCHAR StopSig[3] = { 0xCC,0xCC,0xCC };
 
     ICT_DATA_RELATED RelatedDataICT = { 0 };
 
@@ -101,20 +101,6 @@ VOID TheiaEntry(VOID)
     DataIndpnRWVMem.pIoBuffer = &RetOpcode;
 
     DataIndpnRWVMem.LengthRW = 1UI64;
-
-    UNICODE_STRING PageNonLarge = { 0 };
-
-    RtlCreateUnicodeString(&PageNonLarge, L"\xff");
-
-    g_DieNonLargePage = PageNonLarge.Buffer;
-
-    RtlCreateUnicodeString(&PageNonLarge, L"\xff");
-
-    g_pSpiiNonLargePage = PageNonLarge.Buffer;
-
-    RtlCreateUnicodeString(&PageNonLarge, L"\xff");
-
-    g_pSpirNonLargePage = PageNonLarge.Buffer;
 
     InitTheiaContext();
 

@@ -12,7 +12,6 @@
 #include "GetIF.h"
 #include "Clacx64.h"
 #include "Stacx64.h"
-#include "SetSPx64.h"
 #include "PhysMem.h"
 #include "PgSysThreads.h"
 #include "VisorRoutines.h"

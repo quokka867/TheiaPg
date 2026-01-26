@@ -78,7 +78,7 @@ volatile PVOID g_pSpiiNonLargePage = NULL;
 /*++
 * Routine: _SearchPatternInImg
 *
-* MaxIRQL: SPII_NO_OPTIONAL:               IRQL <= DISPATCH_LEVEL
+* MaxIRQL: SPII_NO_OPTIONAL:               IRQL any level
 *          SPII_GET_BASE_MODULE:           IRQL any level (If IRQL > DISPATCH_LEVEL then the input addresses must be NonPaged)
 *          SPII_SCAN_CALLER_INPUT_ADDRESS: IRQL any level (If IRQL > DISPATCH_LEVEL then the input addresses must be NonPaged)
 * 
@@ -94,9 +94,9 @@ volatile PVOID g_pSpiiNonLargePage = NULL;
 * 
 * @param pModuleName: Name module in target _EPROCESS
 * 
-* @param pSig: Signature/Pattern
+* @param pSig: Signature
 * 
-* @param pMaskSig: Mask Signature/Pattern
+* @param pMaskSig: Mask Signature
 *
 * Description: Routine for multifunctional analysis of the PE-Image windows.
 --*/
@@ -114,23 +114,13 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
 
     PTHEIA_METADATA_BLOCK pLocalTMDB = g_pSpiiNonLargePage;
 
-    BOOLEAN IsLocalTMDB = FALSE;
-
     BOOLEAN IsLocalCtx = FALSE;
 
     UNICODE_STRING StrMmIsAddressValid = { 0 };
 
     UNICODE_STRING StrMmIsNonPagedSystemAddressValid = { 0 };
 
-    UNICODE_STRING StrExAllocatePool2 = { 0 };
-
-    UNICODE_STRING StrExFreePoolWithTag = { 0 };
-
     USHORT LenSIG = 0UI16;
-
-    PVOID pSIGAlignment = NULL;
-
-    PVOID pMaskSIGAlignment = NULL;
 
     ULONG64 Cr3User = 0UI64;
 
@@ -158,18 +148,8 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
 
     PVOID pResultVa = NULL;
 
-    if (!g_pTheiaCtx)
-    {
-        IsLocalCtx = TRUE;
-
-        IsLocalTMDB = TRUE;
-    }
-    else
-    {
-        if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; }
-
-        if (g_pTheiaCtx->TheiaMetaDataBlock.CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB) { IsLocalTMDB = TRUE; }
-    }
+    if (!g_pTheiaCtx) { IsLocalCtx = TRUE; }
+    else { if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; } }
 
     if (IsLocalCtx)
     {
@@ -189,25 +169,6 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
 
         SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] = MmGetSystemRoutineAddress(&StrMmIsNonPagedSystemAddressValid);
 
-        StrExAllocatePool2.Buffer = L"ExAllocatePool2";
-
-        StrExAllocatePool2.Length = (USHORT)(wcslen(StrExAllocatePool2.Buffer) * 2);
-
-        StrExAllocatePool2.MaximumLength = (StrExAllocatePool2.Length + 2);
-
-        SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2] = MmGetSystemRoutineAddress(&StrExAllocatePool2);
-
-        StrExFreePoolWithTag.Buffer = L"ExFreePoolWithTag";
-
-        StrExFreePoolWithTag.Length = (USHORT)(wcslen(StrExFreePoolWithTag.Buffer) * 2);
-
-        StrExFreePoolWithTag.MaximumLength = (StrExFreePoolWithTag.Length + 2);
-
-        SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);
-    }
-
-    if (IsLocalTMDB)
-    {
         if (!pLocalTMDB)
         {
             DbgLog("[TheiaPg <->] DieDispatchIntrnlError: Page for LocalTMDB is not allocate\n");
@@ -216,13 +177,6 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
         }
 
         InitTheiaMetaDataBlock(pLocalTMDB);
-
-        if (pLocalTMDB->CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB)
-        {
-            DbgLog("[TheiaPg <->] DieDispatchIntrnlError: LocalTMDB is not complete\n");
-
-            goto ExitJmp;
-        }
     }
 
     if (FlagsExecute & SPII_SCAN_CALLER_INPUT_ADDRESS)
@@ -367,7 +321,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
             goto ExitJmp;
         }
 
-        if (!(*((PVOID*)((PUCHAR)pEprocessTrgtImg + (IsLocalTMDB ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET)))))
+        if (!(*((PVOID*)((PUCHAR)pEprocessTrgtImg + (IsLocalCtx ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET)))))
         {
             pDummyLdr = PsLoadedModuleList;
 
@@ -381,13 +335,13 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
 
             HrdClacx64();
 
-            Cr3User = *((PULONG64)((PUCHAR)pEprocessTrgtImg + (IsLocalTMDB ? pLocalTMDB->KPROCESS_DirectoryTableBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KPROCESS_DirectoryTableBase_OFFSET)));
+            Cr3User = *((PULONG64)((PUCHAR)pEprocessTrgtImg + (IsLocalCtx ? pLocalTMDB->KPROCESS_DirectoryTableBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KPROCESS_DirectoryTableBase_OFFSET)));
 
             __writecr3(Cr3User);
 
             pDummyLdr = *(PVOID*)((PUCHAR)(*(PVOID*)((PUCHAR)(*(PVOID*)((PUCHAR)pEprocessTrgtImg + 
-                (IsLocalTMDB ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET))) + (IsLocalTMDB ? pLocalTMDB->PEB_Ldr_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_Ldr_OFFSET))) +
-                (IsLocalTMDB ? pLocalTMDB->PEB_LDR_DATA_InLoadOrderModuleList_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_LDR_DATA_InLoadOrderModuleList_OFFSET));
+                (IsLocalCtx ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET))) + (IsLocalCtx ? pLocalTMDB->PEB_Ldr_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_Ldr_OFFSET))) +
+                (IsLocalCtx ? pLocalTMDB->PEB_LDR_DATA_InLoadOrderModuleList_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_LDR_DATA_InLoadOrderModuleList_OFFSET));
 
             pCurrentLdr = pDummyLdr;
         }
@@ -404,7 +358,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
                 }
             }
 
-            pBaseAddrModule = *(PVOID*)((PUCHAR)pCurrentLdr + (!AccessMode ? (IsLocalTMDB ? pLocalTMDB->KLDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KLDR_DllBase_OFFSET) : (IsLocalTMDB ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
+            pBaseAddrModule = *(PVOID*)((PUCHAR)pCurrentLdr + (!AccessMode ? (IsLocalCtx ? pLocalTMDB->KLDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KLDR_DllBase_OFFSET) : (IsLocalCtx ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
          
             if (!(FlagsExecute & SPII_GET_BASE_MODULE)) { goto NoBaseAddrModule; }
 
@@ -427,7 +381,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
     }
     else
     {
-        if (!(*((PVOID*)((PUCHAR)pEprocessTrgtImg + (IsLocalTMDB ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET)))))
+        if (!(*((PVOID*)((PUCHAR)pEprocessTrgtImg + (IsLocalCtx ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET)))))
         {
             pBaseAddrModule = ((PKLDR_DATA_TABLE_ENTRY)(*((PVOID*)PsLoadedModuleList)))->DllBase;
 
@@ -441,10 +395,10 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
             __writecr3(Cr3User);
 
             pBaseAddrModule = *((PVOID*)((PUCHAR)(*((PVOID*)((PUCHAR)(*((PVOID*)((PUCHAR)*((PVOID*)((PUCHAR)pEprocessTrgtImg +
-            (IsLocalTMDB ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET))) +
-            (IsLocalTMDB ? pLocalTMDB->PEB_Ldr_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_Ldr_OFFSET)))) +
-            (IsLocalTMDB ? pLocalTMDB->PEB_LDR_DATA_InLoadOrderModuleList_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_LDR_DATA_InLoadOrderModuleList_OFFSET)))) +
-            (IsLocalTMDB ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
+            (IsLocalCtx ? pLocalTMDB->EPROCESS_Peb_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_Peb_OFFSET))) +
+            (IsLocalCtx ? pLocalTMDB->PEB_Ldr_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_Ldr_OFFSET)))) +
+            (IsLocalCtx ? pLocalTMDB->PEB_LDR_DATA_InLoadOrderModuleList_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_LDR_DATA_InLoadOrderModuleList_OFFSET)))) +
+            (IsLocalCtx ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
 
             __writecr3(Cr3Kernel);
 
@@ -458,27 +412,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
     }
 
 NoBaseAddrModule:
-
-    if (FlagsExecute & SPII_NO_OPTIONAL)
-    {
-        pSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID,...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), EX_GEN_ALLOC_TAG);
-
-        pMaskSIGAlignment = (IsLocalCtx ? ((PVOID(__stdcall*)(PVOID, ...))SpiiCtx[SPII_LOCAL_CONTEXT_EXALLOCATEPOOL2]) : g_pTheiaCtx->pExAllocatePool2)(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + LenSIG) & ~(0x1000 - 1)) / PAGE_SIZE)), EX_GEN_ALLOC_TAG);
-
-        if (!(pSIGAlignment && pMaskSIGAlignment))
-        {
-            DbgLog("[TheiaPg <->] _SearchPatternInImg: Bad alloc page for (SIGAlignment || MaskSIGAlignment)\n");
-
-            goto ExitJmp;
-        }
-        else
-        {
-            memcpy(pSIGAlignment, pSig, LenSIG + 1UI64);
-
-            memcpy(pMaskSIGAlignment, pMaskSig, LenSIG + 1UI64);
-        }
-    }
-    
+  
     if (AccessMode) { __writecr3(Cr3User); }
 
     if (((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_magic == 0x5A4DUI16)
@@ -541,23 +475,23 @@ NoBaseAddrModule:
                 {
                     _mm_prefetch((((ULONG64)pBaseAddrExeRegion + j) & ~0x3F), PF_NON_TEMPORAL_LEVEL_ALL);
 
-                    _mm_prefetch(((PUCHAR)pSIGAlignment) + j, PF_NON_TEMPORAL_LEVEL_ALL);
+                    _mm_prefetch(((PUCHAR)pSig) + j, PF_NON_TEMPORAL_LEVEL_ALL);
 
-                    _mm_prefetch(((PUCHAR)pMaskSIGAlignment) + j, PF_NON_TEMPORAL_LEVEL_ALL);
+                    _mm_prefetch(((PUCHAR)pMaskSig) + j, PF_NON_TEMPORAL_LEVEL_ALL);
                 }
                 else if (!j)
                 {
                     _mm_prefetch(((ULONG64)pBaseAddrExeRegion & ~0x3F), PF_NON_TEMPORAL_LEVEL_ALL);
 
-                    _mm_prefetch(pSIGAlignment, PF_NON_TEMPORAL_LEVEL_ALL);
+                    _mm_prefetch(pSig, PF_NON_TEMPORAL_LEVEL_ALL);
 
-                    _mm_prefetch(pMaskSIGAlignment, PF_NON_TEMPORAL_LEVEL_ALL);
+                    _mm_prefetch(pMaskSig, PF_NON_TEMPORAL_LEVEL_ALL);
                 }
                 else { VOID; } ///< For clarity.
 
-                if (((PUCHAR)pMaskSIGAlignment)[l] == 'x')
+                if (((PUCHAR)pMaskSig)[l] == 'x')
                 {
-                    if (pBaseAddrExeRegion[l] != ((PUCHAR)pSIGAlignment)[l])
+                    if (pBaseAddrExeRegion[l] != ((PUCHAR)pSig)[l])
                     {
                         goto continue2;
                     }
@@ -600,20 +534,8 @@ ExitJmp:
         _enable();
     }
 
-    if (FlagsExecute & SPII_NO_OPTIONAL)
-    {
-        if (pSIGAlignment && pMaskSIGAlignment)
-        {  
-            (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] : g_pTheiaCtx->pExFreePoolWithTag)(pSIGAlignment, EX_GEN_ALLOC_TAG);
-
-            (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_EXFREEPOOLWITHTAG] : g_pTheiaCtx->pExFreePoolWithTag)(pMaskSIGAlignment, EX_GEN_ALLOC_TAG);
-        }
-    }
-
     return pResultVa;
 }
-
-volatile PVOID g_pSpirNonLargePage = NULL;
 
 /*++
 * Routine: _SearchPatternInRegion
@@ -632,11 +554,11 @@ volatile PVOID g_pSpirNonLargePage = NULL;
 *
 * @param pMaskSig: Mask Signature/Pattern
 * 
-* @param pStopSig: Signature/Pattern of stop search
+* @param pStopSig: Signature of stop search
 * 
-* @param LenStopSig: Signature/Pattern of stop search length
+* @param LenStopSig: Signature of stop search length
 *
-* Description: Routine for multifunctional analysis of the input code region.
+* Description: Routine for multifunctional analysis of the memory region.
 --*/
 PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_OBJS], IN ULONG32 FlagsExecute, IN PUCHAR pRegionSearch, IN PUCHAR pSig, IN PUCHAR pMaskSig, IN PUCHAR pStopSig, IN ULONG32 LenStopSig)
 {
@@ -645,10 +567,6 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_OBJS],
     #define SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID 1
 
     PVOID(__fastcall *SpirCtx[2])(PVOID,...) = { 0 }; ///< Routine is critical, so it should not depend on gTheiaCtx.
-
-    PTHEIA_METADATA_BLOCK pLocalTMDB = g_pSpirNonLargePage;
-
-    BOOLEAN IsLocalTMDB = FALSE;
 
     BOOLEAN IsLocalCtx = FALSE;
 
@@ -666,19 +584,9 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_OBJS],
 
     PVOID pResultVa = NULL;
 
-    if (!g_pTheiaCtx)
-    {
-        IsLocalCtx = TRUE;
-
-        IsLocalTMDB = TRUE;
-    }
-    else
-    {
-        if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; }
-
-        if (g_pTheiaCtx->TheiaMetaDataBlock.CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB) { IsLocalTMDB = TRUE; }
-    }
-
+    if (!g_pTheiaCtx) { IsLocalCtx = TRUE; } 
+    else { if (g_pTheiaCtx->CompleteSignatureTC != COMPLETE_SIGNATURE_TC) { IsLocalCtx = TRUE; } }
+    
     if (IsLocalCtx)
     {
         StrMmIsAddressValid.Buffer = L"MmIsAddressValid";
@@ -696,25 +604,6 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_OBJS],
         StrMmIsNonPagedSystemAddressValid.MaximumLength = (StrMmIsNonPagedSystemAddressValid.Length + 2);
 
         SpirCtx[SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] = MmGetSystemRoutineAddress(&StrMmIsNonPagedSystemAddressValid);
-    }
-
-    if (IsLocalTMDB)
-    {
-        if (!pLocalTMDB)
-        {
-            DbgLog("[TheiaPg <->] DieDispatchIntrnlError: Page for LocalTMDB is not allocate\n");
-
-            goto ExitJmp;
-        }
-
-        InitTheiaMetaDataBlock(pLocalTMDB);
-
-        if (pLocalTMDB->CompleteSignatureTMDB != COMPLETE_SIGNATURE_TMDB)
-        {
-            DbgLog("[TheiaPg <->] DieDispatchIntrnlError: LocalTMDB is not complete\n");
-
-            goto ExitJmp;
-        }
     }
 
     if (!pRegionSearch || !((__readcr8() <= DISPATCH_LEVEL) ? 

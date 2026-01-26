@@ -250,7 +250,7 @@ volatile static VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTIN
                     {
                         if (!((HrdGetPteInputVa(pPgDpcRoutine))->NoExecute))
                         {
-                            DbgLog("[TheiaPg <+>] VsrExAllocatePool2: Detect PgDpcRoutine in PgCtx | PgDpcRoutine: 0x%I64X\n\n", pPgDpcRoutine);
+                            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect PgDpcRoutine in PgCtx | PgDpcRoutine: 0x%I64X\n\n", pPgDpcRoutine);
 
                             DataIndpnRWVMem.pVa = pPgDpcRoutine;
 
@@ -262,7 +262,7 @@ volatile static VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTIN
                     {
                         if (!((HrdGetPteInputVa(pPgApcRoutine))->NoExecute))
                         {
-                            DbgLog("[TheiaPg <+>] VsrExAllocatePool2: Detect PgApcRoutine in PgCtx | PgApcRoutine: 0x%I64X\n\n", pPgApcRoutine);
+                            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect PgApcRoutine in PgCtx | PgApcRoutine: 0x%I64X\n\n", pPgApcRoutine);
 
                             DataIndpnRWVMem.pVa = pPgApcRoutine;
 

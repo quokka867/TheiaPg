@@ -560,8 +560,6 @@ typedef struct _KTIMER_TABLE
 
 typedef struct _THEIA_METADATA_BLOCK
 {
-    ULONG32 CompleteSignatureTMDB;
-
     ULONG32 KPCR_TssBase_OFFSET;
     ULONG32 KPCR_Prcb_OFFSET;
     ULONG32 KPRCB_CurrentThread_OFFSET;
@@ -645,7 +643,9 @@ typedef struct _THEIA_METADATA_BLOCK
 }THEIA_METADATA_BLOCK, * PTHEIA_METADATA_BLOCK;
 
 typedef struct _THEIA_CONTEXT
-{
+{  
+    ULONG64 CompleteSignatureTC;
+
     //
     // A0-Block.
     //
@@ -737,12 +737,7 @@ typedef struct _THEIA_CONTEXT
     ULONG64 pMmPpeBase;
     ULONG64 pMmPxeBase;
     ULONG64 pMmPxeSelf;
-
-    //
-    // A8-Block.
-    //
-    ULONG32 CompleteSignatureTC;
-                    
+                  
 }THEIA_CONTEXT, *PTHEIA_CONTEXT;
 
 typedef struct _INPUTCONTEXT_STUBAPCROUTINE

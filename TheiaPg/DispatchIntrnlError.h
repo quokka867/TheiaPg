@@ -8,6 +8,6 @@ extern volatile PVOID g_pDieIndirectCallBugCheck;
 
 extern volatile PVOID g_DieNtosHeadThreadList;
 
-extern volatile PVOID g_DieNonLargePage;
+extern volatile PVOID g_pDieNonLargePage;
 
 extern DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode);

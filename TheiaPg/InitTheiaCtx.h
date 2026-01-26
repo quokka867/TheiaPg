@@ -2,9 +2,7 @@
 
 #include "LinkHeader.h"
 
-#define COMPLETE_SIGNATURE_TMDB 0xbd3491fdI32
-
-#define COMPLETE_SIGNATURE_TC 0x1299ece2I32
+#define COMPLETE_SIGNATURE_TC 0xaedf1cfd64562bbeI32
 
 extern VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock);
 

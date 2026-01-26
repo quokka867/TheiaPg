@@ -56,9 +56,6 @@
     <Filter Include="Source Files\Common\GVars">
       <UniqueIdentifier>{d7a1be69-9925-4171-9b4d-a199a148fd84}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\SetSPx64">
-      <UniqueIdentifier>{9db0d9ba-8db1-42f7-a66f-884c6f337c49}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Clacx64">
       <UniqueIdentifier>{f8c04864-a1a7-4871-b042-be799da691a8}</UniqueIdentifier>
     </Filter>
@@ -168,9 +165,6 @@
     <ClInclude Include="PgUtils.h">
       <Filter>Source Files\_TheiaPg\_TheiaCore\PgUtils</Filter>
     </ClInclude>
-    <ClInclude Include="SetSPx64.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\SetSPx64</Filter>
-    </ClInclude>
     <ClInclude Include="Clacx64.h">
       <Filter>Source Files\_TheiaPg\__Hardware\_asm\Clacx64</Filter>
     </ClInclude>
@@ -187,9 +181,6 @@
     </MASM>
     <MASM Include="DieBugCheck.asm">
       <Filter>Source Files\_TheiaPg\DispatchIntrnlError\_asm\DieBugCheck</Filter>
-    </MASM>
-    <MASM Include="SetSPx64.asm">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\SetSPx64</Filter>
     </MASM>
     <MASM Include="Clacx64.asm">
       <Filter>Source Files\_TheiaPg\__Hardware\_asm\Clacx64</Filter>
