@@ -360,7 +360,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
 
             pBaseAddrModule = *(PVOID*)((PUCHAR)pCurrentLdr + (!AccessMode ? (IsLocalCtx ? pLocalTMDB->KLDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KLDR_DllBase_OFFSET) : (IsLocalCtx ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
          
-            if (!(FlagsExecute & SPII_GET_BASE_MODULE)) { goto NoBaseAddrModule; }
+            if (!(FlagsExecute & SPII_GET_BASE_MODULE)) { goto NoRetBaseAddrModule; }
 
             if (AccessMode)
             {
@@ -400,10 +400,10 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
             (IsLocalCtx ? pLocalTMDB->PEB_LDR_DATA_InLoadOrderModuleList_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.PEB_LDR_DATA_InLoadOrderModuleList_OFFSET)))) +
             (IsLocalCtx ? pLocalTMDB->LDR_DllBase_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.LDR_DllBase_OFFSET)));
 
-            __writecr3(Cr3Kernel);
-
             if (FlagsExecute & SPII_GET_BASE_MODULE)
             {
+                __writecr3(Cr3Kernel);
+
                 _enable();
 
                 return pBaseAddrModule;
@@ -411,10 +411,8 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_OBJS], IN
         }
     }
 
-NoBaseAddrModule:
+NoRetBaseAddrModule:
   
-    if (AccessMode) { __writecr3(Cr3User); }
-
     if (((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_magic == 0x5A4DUI16)
     {
         if (*((PUSHORT)(((PUCHAR)pBaseAddrModule) + ((PIMAGE_DOS_HEADER)pBaseAddrModule)->e_lfanew)) == 0x4550I32)
