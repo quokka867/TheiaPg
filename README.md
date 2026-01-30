@@ -14,7 +14,7 @@ Secure boot: The module is conditionally compatible with SecureBoot, if use Mapp
 
 ## Additional description
 
-Module image size with MSVC optimizations ~50kb.
+Module image size with MSVC optimizations ~55kb.
 
 The module was successfully tested on Windows 11 25H2 build: `26200.7705`.
 
