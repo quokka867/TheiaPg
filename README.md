@@ -1,4 +1,4 @@
-# TheiaPg: Bypass PatchGuard at Runtime - Windows 11 25H2
+# TheiaPg: Bypassing PatchGuard at Runtime - Windows 11 25H2
 
 ## Main description
 
