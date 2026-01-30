@@ -38,7 +38,7 @@ PVOID _HeurisSearchKdpcInCtx(IN PCONTEXT pCtx)
 }
 
 /*++
-* Routine: _IsAddressSafe
+* Routine: _IsSafeAddress
 *
 * MaxIRQL: DISPATCH_LEVEL (If IRQL > DISPATCH_LEVEL then the input address must be NonPaged)
 *
@@ -48,7 +48,7 @@ PVOID _HeurisSearchKdpcInCtx(IN PCONTEXT pCtx)
 *
 * Description: Routine for checking the VA for belonging to one of the loaded kernel modules.
 --*/
-BOOLEAN _IsAddressSafe(IN PVOID pCheckAddress)
+BOOLEAN _IsSafeAddress(IN PVOID pCheckAddress)
 {
     #define ERROR_IS_SAFE_ADDRESS 0x43f77387UI32
 

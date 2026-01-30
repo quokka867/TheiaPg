@@ -59,6 +59,7 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KPCR_Prcb_OFFSET                          = 0x180UI32;
 
         pTheiaMetaDataBlock->KPRCB_CurrentThread_OFFSET                = 0x08UI32;
+        pTheiaMetaDataBlock->KPRCB_Number_OFFSET                       = 0x24UI32;
         pTheiaMetaDataBlock->KPRCB_IdleThread_OFFSET                   = 0x18UI32;
         pTheiaMetaDataBlock->KPRCB_HalReserved                         = 0x48UI32;
         pTheiaMetaDataBlock->KPRCB_AcpiReserved                        = 0xe0UI32;
@@ -77,7 +78,7 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KTHREAD_StackBase_OFFSET                  = 0x38UI32;
         pTheiaMetaDataBlock->KTHREAD_KernelStack_OFFSET                = 0x58UI32;
         pTheiaMetaDataBlock->KTHREAD_MiscFlags_OFFSET                  = 0x74UI32;
-        pTheiaMetaDataBlock->KTHREAD_ApcState_OFFSET                   = 0x90UI32;
+        pTheiaMetaDataBlock->KTHREAD_ApcState_OFFSET                   = 0x98UI32;
         pTheiaMetaDataBlock->KTHREAD_ContextSwitches_OFFSET            = 0x154UI32;
         pTheiaMetaDataBlock->KTHREAD_WaitTime_OFFSET                   = 0x1b4UI32;
         pTheiaMetaDataBlock->KTHREAD_KernelTime_OFFSET                 = 0x28cUI32;
@@ -123,6 +124,18 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KIRETIREDPCLIST_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrKiRetireDpcList;
         pTheiaMetaDataBlock->KIRETIREDPCLIST_HOOK_ALIGNMENT = 0UI32;
 
+        pTheiaMetaDataBlock->KIDELIVERAPC_SIG = &_25h2_w11_KiDeliverApc_SIG;
+        pTheiaMetaDataBlock->KIDELIVERAPC_MASK = &_25h2_w11_KiDeliverApc_MASK;
+        pTheiaMetaDataBlock->KIDELIVERAPC_HANDLER = &_25h2_w11_Handler_KiDeliverApc;
+        pTheiaMetaDataBlock->KIDELIVERAPC_LEN_HANDLER = sizeof _25h2_w11_Handler_KiDeliverApc;
+        pTheiaMetaDataBlock->KIDELIVERAPC_HOOK_ALIGNMENT = 1UI32;
+
+        pTheiaMetaDataBlock->EXQUEUEWORKITEM_SIG = &_25h2_w11_ExQueueWorkItem_SIG;
+        pTheiaMetaDataBlock->EXQUEUEWORKITEM_MASK = &_25h2_w11_ExQueueWorkItem_MASK;
+        pTheiaMetaDataBlock->EXQUEUEWORKITEM_HANDLER = &_25h2_w11_HandlerVsrExQueueWorkItem;
+        pTheiaMetaDataBlock->EXQUEUEWORKITEM_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrExQueueWorkItem;
+        pTheiaMetaDataBlock->EXQUEUEWORKITEM_HOOK_ALIGNMENT = 0UI32;
+
         pTheiaMetaDataBlock->EXALLOCATEPOOL2_SIG = &_25h2_w11_ExAllocatePool2_SIG;
         pTheiaMetaDataBlock->EXALLOCATEPOOL2_MASK = &_25h2_w11_ExAllocatePool2_MASK;
         pTheiaMetaDataBlock->EXALLOCATEPOOL2_HANDLER = &_25h2_w11_HandlerVsrExAllocatePool2;
@@ -134,6 +147,9 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_HANDLER = &_25h2_w11_HandlerVsrKiCustomRecurseRoutineX;
         pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_LEN_HANDLER = sizeof _25h2_w11_HandlerVsrKiCustomRecurseRoutineX;
         pTheiaMetaDataBlock->KICUSTOMRECURSEROUTINEX_HOOK_ALIGNMENT = 0UI32;
+
+        pTheiaMetaDataBlock->KIBALANCESETMANANGERDEFERREDROUTINE_SIG = &_25h2_w11_KiBalanceSetManagerDeferredRoutine_SIG;
+        pTheiaMetaDataBlock->KIBALANCESETMANANGERDEFERREDROUTINE_MASK = &_25h2_w11_KiBalanceSetManagerDeferredRoutine_MASK;
 
         pTheiaMetaDataBlock->KIMCADEFERREDRECOVERYSERVICE_SIG = &_25h2_w11_KiMcaDeferredRecoveryService_SIG;
         pTheiaMetaDataBlock->KIMCADEFERREDRECOVERYSERVICE_MASK = &_25h2_w11_KiMcaDeferredRecoveryService_MASK;
@@ -189,33 +205,47 @@ VOID InitTheiaContext(VOID)
 
     #define ERROR_DOUBLE_INIT_THEIA_CONTEXT 0x62c7bf9fUI32
 
-    // OtherData ==============================================================================================================++
-                                                                                                                               //
-    CONST UCHAR StopSig[5] = { 0xCC,0xCC,0xCC,0xCC,0xCC };                                                                     //
-                                                                                                                               //
-    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG[] = { 0x48, 0xb8, 0x77, 0x72, 0xdd, 0xf3, 0xc7, 0xc6, 0x35, 0x7e };     //
-    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK[sizeof INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG] = { "xxxxxxxxxx" }; // 
-                                                                                                                               //
-    CONST UCHAR PgXorRoutineSig[52] = ///< The byte pattern of the top of PgCtx is needed for routines of PgCtx interceptors.  //
-    {                                                                                                                          //
-     0x2e, 0x48, 0x31, 0x11,                                                                                                   //
-     0x48, 0x31, 0x51, 0x08,                                                                                                   //
-     0x48, 0x31, 0x51, 0x10,                                                                                                   //
-     0x48, 0x31, 0x51, 0x18,                                                                                                   //
-     0x48, 0x31, 0x51, 0x20,                                                                                                   //
-     0x48, 0x31, 0x51, 0x28,                                                                                                   //
-     0x48, 0x31, 0x51, 0x30,                                                                                                   //
-     0x48, 0x31, 0x51, 0x38,                                                                                                   //
-     0x48, 0x31, 0x51, 0x40,                                                                                                   //
-     0x48, 0x31, 0x51, 0x48,                                                                                                   //
-     0x48, 0x31, 0x51, 0x50,                                                                                                   //
-     0x48, 0x31, 0x51, 0x58,                                                                                                   //
-     0x48, 0x31, 0x51, 0x60                                                                                                    //
-    };                                                                                                                         //
-                                                                                                                               //
-    PVOID(__stdcall*pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);                                      //
-                                                                                                                               //
-    // ========================================================================================================================++
+    // OtherData ============================================================================================================================++
+                                                                                                                                             //
+    CONST UCHAR StopSig[4] = { 0xCC,0xCC,0xCC,0xCC };                                                                                        //
+                                                                                                                                             //
+    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG[] = { 0x48, 0xb8, 0x77, 0x72, 0xdd, 0xf3, 0xc7, 0xc6, 0x35, 0x7e };                   //
+    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK[sizeof INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG] = { "xxxxxxxxxx" };               // 
+                                                                                                                                             //
+    CONST UCHAR PgXorRoutineSig[52] = ///< The byte pattern of the top of PgCtx is needed for routines of PgCtx interceptors.                //
+    {                                                                                                                                        //
+     0x2e, 0x48, 0x31, 0x11,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x08,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x10,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x18,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x20,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x28,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x30,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x38,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x40,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x48,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x50,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x58,                                                                                                                 //
+     0x48, 0x31, 0x51, 0x60                                                                                                                  //
+    };                                                                                                                                       //
+                                                                                                                                             //
+    PVOID(__stdcall*pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);                                                    //
+                                                                                                                                             //
+                                                                                                                                             //
+    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_SUBSIG[] =                                                                                       //
+    {                                                                                                                                        //
+      0x0F, 0xB6, 0xD0, 0x40, 0x0F,                                                                                                          //
+      0xB6, 0xCF, 0xE8, 0x00, 0x00,                                                                                                          //
+      0x00, 0x00, 0xE9, 0x00, 0x00,                                                                                                          //
+      0x00, 0x00, 0x83, 0x05, 0x00,                                                                                                          //
+      0x00, 0x00, 0x00, 0xFF, 0x48,                                                                                                          //
+      0x89, 0x3D, 0x00, 0x00, 0x00,                                                                                                          //
+      0x00, 0x0F, 0x85, 0x00, 0x00,                                                                                                          //
+      0x00, 0x00, 0x00, 0x00, 0x00                                                                                                           //
+    };                                                                                                                                       //
+    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_MASK[sizeof INIT_THEIA_CTX_KIUPDATETIME_SUBSIG] = { "xxxxxxxx????x????xx????xxxx????xx???????" };//
+                                                                                                                                             //
+    // ======================================================================================================================================++
 
     // RelatedData =====================++
                                         //
@@ -277,6 +307,14 @@ VOID InitTheiaContext(VOID)
                                                                                                                  //
     StrRtlLookupFunctionEntry.MaximumLength = (StrRtlLookupFunctionEntry.Length + 2);                            //
                                                                                                                  //
+    UNICODE_STRING StrPsLookupThreadByThreadId = { 0 };                                                          //
+                                                                                                                 //
+    StrPsLookupThreadByThreadId.Buffer = L"PsLookupThreadByThreadId";                                            //
+                                                                                                                 //
+    StrPsLookupThreadByThreadId.Length = (USHORT)((wcslen(StrPsLookupThreadByThreadId.Buffer)) * 2);             //
+                                                                                                                 //
+    StrPsLookupThreadByThreadId.MaximumLength = (StrPsLookupThreadByThreadId.Length + 2);                        //
+                                                                                                                 //
     UNICODE_STRING StrRtlVirtualUnwind = { 0 };                                                                  //
                                                                                                                  //
     StrRtlVirtualUnwind.Buffer = L"RtlVirtualUnwind";                                                            //
@@ -333,6 +371,14 @@ VOID InitTheiaContext(VOID)
                                                                                                                  //
     StrExAllocatePool2.MaximumLength = (StrExAllocatePool2.Length + 2);                                          //
                                                                                                                  //
+    UNICODE_STRING StrExFreePoolWithTag = { 0 };                                                                 //
+                                                                                                                 //
+    StrExFreePoolWithTag.Buffer = L"ExFreePoolWithTag";                                                          //
+                                                                                                                 //
+    StrExFreePoolWithTag.Length = (USHORT)((wcslen(StrExFreePoolWithTag.Buffer)) * 2);                           //
+                                                                                                                 //
+    StrExFreePoolWithTag.MaximumLength = (StrExFreePoolWithTag.Length + 2);                                      //
+                                                                                                                 //
     UNICODE_STRING StrIoCancelIrp = { 0 };                                                                       //
                                                                                                                  //
     StrIoCancelIrp.Buffer = L"IoCancelIrp";                                                                      //
@@ -357,14 +403,6 @@ VOID InitTheiaContext(VOID)
                                                                                                                  //
     StrPsIsSystemThread.MaximumLength = (StrPsIsSystemThread.Length + 2);                                        //
                                                                                                                  //
-    UNICODE_STRING StrPsLookupThreadByThreadId = { 0 };                                                          //
-                                                                                                                 //
-    StrPsLookupThreadByThreadId.Buffer = L"PsLookupThreadByThreadId";                                            //
-                                                                                                                 //
-    StrPsLookupThreadByThreadId.Length = (USHORT)((wcslen(StrPsLookupThreadByThreadId.Buffer)) * 2);             //
-                                                                                                                 //
-    StrPsLookupThreadByThreadId.MaximumLength = (StrPsLookupThreadByThreadId.Length + 2);                        //
-                                                                                                                 //
     UNICODE_STRING StrObfDereferenceObject = { 0 };                                                              //
                                                                                                                  //
     StrObfDereferenceObject.Buffer = L"ObfDereferenceObject";                                                    //
@@ -373,25 +411,25 @@ VOID InitTheiaContext(VOID)
                                                                                                                  //
     StrObfDereferenceObject.MaximumLength = (StrObfDereferenceObject.Length + 2);                                //
                                                                                                                  //
-    UNICODE_STRING StrKeCapturePersistentThreadState = { 0 };                                                    //
+    UNICODE_STRING StrExQueueWorkItem = { 0 };                                                                   //
                                                                                                                  //
-    StrKeCapturePersistentThreadState.Buffer = L"KeCapturePersistentThreadState";                                //
+    StrExQueueWorkItem.Buffer = L"ExQueueWorkItem";                                                              //
                                                                                                                  //
-    StrKeCapturePersistentThreadState.Length = (USHORT)((wcslen(StrKeCapturePersistentThreadState.Buffer)) * 2); //
+    StrExQueueWorkItem.Length = (USHORT)((wcslen(StrExQueueWorkItem.Buffer)) * 2);                               //
                                                                                                                  //
-    StrKeCapturePersistentThreadState.MaximumLength = (StrKeCapturePersistentThreadState.Length + 2);            //
-                                                                                                                 //
-    UNICODE_STRING StrExFreePoolWithTag = { 0 };                                                                 //
-                                                                                                                 //
-    StrExFreePoolWithTag.Buffer = L"ExFreePoolWithTag";                                                          //
-                                                                                                                 //
-    StrExFreePoolWithTag.Length = (USHORT)((wcslen(StrExFreePoolWithTag.Buffer)) * 2);                           //
-                                                                                                                 //
-    StrExFreePoolWithTag.MaximumLength = (StrExFreePoolWithTag.Length + 2);                                      //
+    StrExQueueWorkItem.MaximumLength = (StrExQueueWorkItem.Length + 2);                                          //
                                                                                                                  //
     // ==========================================================================================================++
                                                                                                                    
     // KdDebuggerBlock BlockVars ===========================================================================================================================================++                          
+                                                                                                                                                                            //
+    UNICODE_STRING StrKeCapturePersistentThreadState = { 0 };                                                                                                               //
+                                                                                                                                                                            //
+    StrKeCapturePersistentThreadState.Buffer = L"KeCapturePersistentThreadState";                                                                                           //
+                                                                                                                                                                            //
+    StrKeCapturePersistentThreadState.Length = (USHORT)((wcslen(StrKeCapturePersistentThreadState.Buffer)) * 2);                                                            //
+                                                                                                                                                                            //
+    StrKeCapturePersistentThreadState.MaximumLength = (StrKeCapturePersistentThreadState.Length + 2);                                                                       //
                                                                                                                                                                             //
     PVOID pKeCapturePersistentThreadState = NULL;                                                                                                                           //
                                                                                                                                                                             //
@@ -482,6 +520,15 @@ VOID InitTheiaContext(VOID)
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
 
+    g_pTheiaCtx->pKiDeliverApc = _SearchPatternInImg(NULL, SPII_NO_OPTIONAL, PsInitialSystemProcess, ".text", NULL, g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_MASK);
+
+    if (!g_pTheiaCtx->pKiDeliverApc)
+    {
+        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiDeliverApc not found\n");
+
+        DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
+    }
+
     g_pTheiaCtx->pKiCustomRecurseRoutineX = _SearchPatternInImg(NULL, SPII_NO_OPTIONAL, PsInitialSystemProcess, ".text", NULL, g_pTheiaCtx->TheiaMetaDataBlock.KICUSTOMRECURSEROUTINEX_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KICUSTOMRECURSEROUTINEX_MASK);
 
     if (!g_pTheiaCtx->pKiCustomRecurseRoutineX)
@@ -490,6 +537,23 @@ VOID InitTheiaContext(VOID)
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
+
+    g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine = _SearchPatternInImg(NULL, SPII_NO_OPTIONAL, PsInitialSystemProcess, ".text", NULL, g_pTheiaCtx->TheiaMetaDataBlock.KIBALANCESETMANANGERDEFERREDROUTINE_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KIBALANCESETMANANGERDEFERREDROUTINE_MASK);
+
+    if (!g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine)
+    {
+        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiBalanceSetManagerDeferredRoutine not found\n");
+
+        DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
+    }
+
+    g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc = _SearchPatternInImg(NULL, SPII_NO_OPTIONAL, PsInitialSystemProcess, ".text", NULL, &INIT_THEIA_CTX_KIUPDATETIME_SUBSIG, &INIT_THEIA_CTX_KIUPDATETIME_MASK);
+
+    (PUCHAR)g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc += 0x2e;
+
+    SaveRel32Offset = *(PLONG32)(g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc);
+
+    g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc = (((ULONG64)g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc + 4) + ((SaveRel32Offset < 0I32) ? ((LONG64)SaveRel32Offset | 0xffffffff00000000UI64) : (LONG64)SaveRel32Offset));
 
     g_pTheiaCtx->pKiMcaDeferredRecoveryService = _SearchPatternInImg(NULL, SPII_NO_OPTIONAL, PsInitialSystemProcess, ".text", NULL, g_pTheiaCtx->TheiaMetaDataBlock.KIMCADEFERREDRECOVERYSERVICE_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KIMCADEFERREDRECOVERYSERVICE_MASK);
 
@@ -620,11 +684,13 @@ VOID InitTheiaContext(VOID)
 
     g_pTheiaCtx->pExAllocatePool2                = pExAllocatePool2;
 
+    g_pTheiaCtx->pExFreePoolWithTag              = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);
+
     g_pTheiaCtx->pPsIsSystemThread               = MmGetSystemRoutineAddress(&StrPsIsSystemThread);
 
     g_pTheiaCtx->pObfDereferenceObject           = MmGetSystemRoutineAddress(&StrObfDereferenceObject);
 
-    g_pTheiaCtx->pExFreePoolWithTag              = MmGetSystemRoutineAddress(&StrExFreePoolWithTag);
+    g_pTheiaCtx->pExQueueWorkItem                = MmGetSystemRoutineAddress(&StrExQueueWorkItem);
 
     //
     // Initialization A5-Block
@@ -637,15 +703,15 @@ VOID InitTheiaContext(VOID)
     // Initialization A6-Block
     //
     g_pTheiaCtx->ppKiWaitNever = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, g_pTheiaCtx->pKiExecuteAllDpcs, &INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG, &INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK, &StopSig, sizeof StopSig);
-    
-    g_pTheiaCtx->ppKiWaitAlways = g_pTheiaCtx->ppKiWaitNever;                                                                                                                                                                               
-    
+                                                                                                                                                                                   
     if (!g_pTheiaCtx->ppKiWaitNever)                                                                                                                                                                                                        
     {                                                                                                                                                                                                                                       
         DbgLog("[TheiaPg <->] InitTheiaContext: SubSig for KiExecuteAllDpcs (KiWaitAlways/KiWaitNever) not found\n");                                                                                                                       
         
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                                                                                                   
-    }                                                                                                                                                                                                                                       
+    }
+
+    g_pTheiaCtx->ppKiWaitAlways = g_pTheiaCtx->ppKiWaitNever;
                                                                                                                                                                                                                                             
     g_pTheiaCtx->ppKiWaitNever = (g_pTheiaCtx->ppKiWaitNever = ((PUCHAR)g_pTheiaCtx->ppKiWaitNever - 8));                                                                                                                                   
     
@@ -677,7 +743,7 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                                                                                                                     //
     pKdCopyDataBlock = (((ULONG64)((PUCHAR)pKeCapturePersistentThreadState + 32)) + ((SaveRel32Offset < 0I32) ? ((LONG64)SaveRel32Offset | 0xffffffff00000000UI64) : (LONG64)SaveRel32Offset));                                                                     //
                                                                                                                                                                                                                                                                     //
-    pKdDebuggerDataBlockDec = pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE* ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');                                                                                                   //
+    pKdDebuggerDataBlockDec = pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');                                                                                                   //
                                                                                                                                                                                                                                                                     //
     if (!pKdDebuggerDataBlockDec)                                                                                                                                                                                                                                   //
     {                                                                                                                                                                                                                                                               // 

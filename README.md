@@ -1,4 +1,4 @@
-# TheiaPg: Defeating PatchGuard at Runtime - Windows 11 25H2
+# TheiaPg: Bypass PatchGuard at Runtime - Windows 11 25H2
 
 ## Main description
 
@@ -16,7 +16,7 @@ Secure boot: The module is conditionally compatible with SecureBoot, if use Mapp
 
 Module image size with MSVC optimizations ~50kb.
 
-The module was successfully tested on Windows 11 25H2 build: `26200.7623`.
+The module was successfully tested on Windows 11 25H2 build: `26200.7705`.
 
 # Result after the module testing session
 

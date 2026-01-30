@@ -51,39 +51,37 @@ VOID SearchKdpcInPgPrcbFields(VOID)
 
 	CheckStatusTheiaCtx();
 
-	ULONG32 GsOffsetHalReserved = NULL;
+	ULONG32 GsOffsetHalReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_HalReserved);
 
-	ULONG32 GsOffsetAcpiReserved = NULL;
+	ULONG32 GsOffsetAcpiReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_AcpiReserved);
 
-	PKDPC pCurrentCheckKdpc = NULL;
+	PKDPC pCurrentCheckKDPC = NULL;
 
 	BOOLEAN OldIF = FALSE;
 
-	GsOffsetHalReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_HalReserved);
-
-	GsOffsetAcpiReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_AcpiReserved);
+	ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
 	for (UCHAR i = 0UI8, j = 0UI8; i < 8; i++, j += 8)
 	{
-		pCurrentCheckKdpc = (PKDPC)__readgsqword(GsOffsetHalReserved + j);
+		pCurrentCheckKDPC = (PKDPC)__readgsqword(GsOffsetHalReserved + j);
 
-		if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKdpc)))
+		if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKDPC)))
 		{
-			if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKdpc->DeferredRoutine)))
+			if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKDPC->DeferredRoutine)))
 			{
-				if (!(HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->NoExecute))
+				if (!(HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->NoExecute))
 				{
-					DbgLog("[TheiaPg <+>] SearchKdpcInPgPrcbFields: Detect PG-KDPC in KPRCB.HalReserved | _KDPC: 0x%I64X\n", pCurrentCheckKdpc);
+					DbgLog("[TheiaPg <+>] SearchKdpcInPgPrcbFields: Detect PG-KDPC in KPRCB.HalReserved[%01d] | _KDPC: 0x%I64X | CpuCore: 0x%I32X\n", i, pCurrentCheckKDPC, CurrCoreNum);
 
 					if (OldIF = HrdGetIF()) { _disable(); }
 
-					HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->Dirty1 = 1;
+					HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->Dirty1 = 1;
 
 					__writecr3(__readcr3());
 
-					*(PUCHAR)(pCurrentCheckKdpc->DeferredRoutine) = 0xC3UI8;
+					*(PUCHAR)(pCurrentCheckKDPC->DeferredRoutine) = 0xC3UI8;
 
-					HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->Dirty1 = 0;
+					HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->Dirty1 = 0;
 
 					__writecr3(__readcr3());
 
@@ -95,25 +93,25 @@ VOID SearchKdpcInPgPrcbFields(VOID)
 		}
 	}
 
-	pCurrentCheckKdpc = (PKDPC)__readgsqword(GsOffsetAcpiReserved);
+	pCurrentCheckKDPC = (PKDPC)__readgsqword(GsOffsetAcpiReserved);
 
-	if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKdpc)))
+	if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKDPC)))
 	{
-		if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKdpc->DeferredRoutine)))
+		if ((g_pTheiaCtx->pMmIsAddressValid(pCurrentCheckKDPC->DeferredRoutine)))
 		{
-			if (!(HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->NoExecute))
+			if (!(HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->NoExecute))
 			{
-				DbgLog("[TheiaPg <+>] SearchKdpcInPgPrcbFields: Detect PG-KDPC in KPRCB.AcpiReserved | _KDPC: 0x%I64X\n", pCurrentCheckKdpc);
+				DbgLog("[TheiaPg <+>] SearchKdpcInPgPrcbFields: Detect PG-KDPC in KPRCB.AcpiReserved | _KDPC: 0x%I64X | CpuCore: 0x%I32X\n", pCurrentCheckKDPC, CurrCoreNum);
 
 				if (OldIF = HrdGetIF()) { _disable(); }
 
-				HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->Dirty1 = 1;
+				HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->Dirty1 = 1;
 
 				__writecr3(__readcr3());
 
-				*(PUCHAR)(pCurrentCheckKdpc->DeferredRoutine) = 0xC3UI8;
+				*(PUCHAR)(pCurrentCheckKDPC->DeferredRoutine) = 0xC3UI8;
 
-				HrdGetPteInputVa(pCurrentCheckKdpc->DeferredRoutine)->Dirty1 = 0;
+				HrdGetPteInputVa(pCurrentCheckKDPC->DeferredRoutine)->Dirty1 = 0;
 
 				__writecr3(__readcr3());
 

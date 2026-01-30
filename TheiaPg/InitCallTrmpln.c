@@ -1,7 +1,7 @@
 #include "LinkHeader.h"
 
 /*++
-* Routine: HkBuilderStubCallTrmpln
+* Routine: HkBuilderWrapperCallTrmpln
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
@@ -10,15 +10,15 @@
 * @param RelatedDataICT: Pointer to PICT_DATA_RELATED
 *
 * Description: Important for kernel module mapping support,
-* without stub Stack-Unwind will not be able to correctly working without kernel routine access to the kernel module .pdata.
+* without wrapper Stack-Unwind will not be able to correctly working without kernel routine access to the kernel module .pdata.
 --*/
-static PVOID HkBuilderStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
+static PVOID HkBuilderWrapperCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 {
     #define ERROR_BUILD_STUB_CALL_TRMPLN 0x8eabcf40I32
 
     CheckStatusTheiaCtx();
 
-    UCHAR CoreStubCall[] =
+    UCHAR CoreWrapperCall[] =
     {
       0x48, 0x89, 0xe5,                                 // mov    rbp,rsp    
       0x48, 0x89, 0xe1,                                 // mov    rcx,rsp
@@ -117,19 +117,19 @@ static PVOID HkBuilderStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     HrdPatchAttributesInputPte(0x7FFFFFFFFFFFFFFFI64, 0I64, pPageStub);
 
-    *(PVOID*)((PUCHAR)&CoreStubCall + 24) = pRelatedDataICT->pHookRoutine;
+    *(PVOID*)((PUCHAR)&CoreWrapperCall + 24) = pRelatedDataICT->pHookRoutine;
 
     memset(pPageStub, 0, PAGE_SIZE);
 
     memcpy(pPageStub, SaveContext, sizeof(SaveContext));
 
-    memcpy((PUCHAR)pPageStub + sizeof(SaveContext), CoreStubCall, sizeof(CoreStubCall));
+    memcpy((PUCHAR)pPageStub + sizeof(SaveContext), CoreWrapperCall, sizeof(CoreWrapperCall));
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall)), RestoreContext1, sizeof(RestoreContext1));
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreWrapperCall)), RestoreContext1, sizeof(RestoreContext1));
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1)), pRelatedDataICT->pHandlerHook, pRelatedDataICT->LengthHandler);
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreWrapperCall) + sizeof(RestoreContext1)), pRelatedDataICT->pHandlerHook, pRelatedDataICT->LengthHandler);
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1) + pRelatedDataICT->LengthHandler), RestoreContext2, sizeof(RestoreContext2));
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreWrapperCall) + sizeof(RestoreContext1) + pRelatedDataICT->LengthHandler), RestoreContext2, sizeof(RestoreContext2));
 
     return pPageStub;
 }
@@ -174,7 +174,7 @@ static VOID HkInitCallTrmplnIntrnl(IN OUT PICT_DATA_RELATED pRelatedDataICT)
         DieDispatchIntrnlError(ERROR_INIT_CALL_TRMPLN_INTRNL);
     }
 
-    pPageHookHandler = HkBuilderStubCallTrmpln(pRelatedDataICT);
+    pPageHookHandler = HkBuilderWrapperCallTrmpln(pRelatedDataICT);
 
     *(PVOID*)(CallTrmpln + 3) = pPageHookHandler;
 
@@ -218,7 +218,7 @@ static VOID HkInitCallTrmplnIntrnl(IN OUT PICT_DATA_RELATED pRelatedDataICT)
 *
 * @param RelatedDataICT: Pointer to PICT_DATA_RELATED
 *
-* Description: Stub for HkInitCallTrmplnIntrnl.
+* Description: Wrapper for HkInitCallTrmplnIntrnl.
 --*/
 VOID HkInitCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 {

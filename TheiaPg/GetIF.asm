@@ -1,3 +1,5 @@
+PUBLIC HrdGetIF
+
 _TEXT SEGMENT
 
 HrdGetIF PROC

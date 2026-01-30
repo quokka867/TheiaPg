@@ -1,3 +1,6 @@
+
+PUBLIC HrdStacx64
+
 _TEXT SEGMENT
 
 HrdStacx64 PROC

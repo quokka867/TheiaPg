@@ -10,6 +10,7 @@
 #include "InitTheiaCtx.h"
 #include "PgUtils.h"
 #include "GetIF.h"
+#include "Voidx64.h"
 #include "Clacx64.h"
 #include "Stacx64.h"
 #include "PhysMem.h"

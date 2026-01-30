@@ -546,15 +546,15 @@ typedef struct _KDPC_DATA
 
 typedef struct _KTIMER_TABLE_ENTRY
 {
-    ULONGLONG Lock;                                                         //0x0
-    struct _LIST_ENTRY Entry;                                               //0x8
-    union _ULARGE_INTEGER Time;                                             //0x18
+    ULONGLONG Lock;
+    struct _LIST_ENTRY Entry;       
+    union _ULARGE_INTEGER Time;    
 }KTIMER_TABLE_ENTRY, *PKTIMER_TABLE_ENTRY;
 
 typedef struct _KTIMER_TABLE
 {
-    struct _KTIMER* TimerExpiry[64];                                        //0x0
-    struct _KTIMER_TABLE_ENTRY TimerEntries[2][256];                        //0x200
+    struct _KTIMER* TimerExpiry[64];
+    struct _KTIMER_TABLE_ENTRY TimerEntries[2][256];
                          
 }KTIMER_TABLE, *PKTIMER_TABLE;
 
@@ -564,6 +564,7 @@ typedef struct _THEIA_METADATA_BLOCK
     ULONG32 KPCR_Prcb_OFFSET;
     ULONG32 KPRCB_CurrentThread_OFFSET;
     ULONG32 KPRCB_IdleThread_OFFSET;
+    ULONG32 KPRCB_Number_OFFSET;
     ULONG32 KPRCB_HalReserved;
     ULONG32 KPRCB_AcpiReserved;
     ULONG32 KPRCB_DpcData0_OFFSET;
@@ -616,6 +617,18 @@ typedef struct _THEIA_METADATA_BLOCK
     PVOID   KIRETIREDPCLIST_LEN_HANDLER;
     ULONG32 KIRETIREDPCLIST_HOOK_ALIGNMENT;
 
+    PVOID   KIDELIVERAPC_SIG;
+    PVOID   KIDELIVERAPC_MASK;
+    PVOID   KIDELIVERAPC_HANDLER;
+    PVOID   KIDELIVERAPC_LEN_HANDLER;
+    ULONG32 KIDELIVERAPC_HOOK_ALIGNMENT;
+
+    PVOID   EXQUEUEWORKITEM_SIG;
+    PVOID   EXQUEUEWORKITEM_MASK;
+    PVOID   EXQUEUEWORKITEM_HANDLER;
+    PVOID   EXQUEUEWORKITEM_LEN_HANDLER;
+    ULONG32 EXQUEUEWORKITEM_HOOK_ALIGNMENT;
+
     PVOID   EXALLOCATEPOOL2_SIG;
     PVOID   EXALLOCATEPOOL2_MASK;
     PVOID   EXALLOCATEPOOL2_HANDLER;
@@ -627,6 +640,9 @@ typedef struct _THEIA_METADATA_BLOCK
     PVOID   KICUSTOMRECURSEROUTINEX_HANDLER;
     PVOID   KICUSTOMRECURSEROUTINEX_LEN_HANDLER;
     ULONG32 KICUSTOMRECURSEROUTINEX_HOOK_ALIGNMENT;
+
+    PVOID KIBALANCESETMANANGERDEFERREDROUTINE_SIG;
+    PVOID KIBALANCESETMANANGERDEFERREDROUTINE_MASK;
 
     PVOID KIMCADEFERREDRECOVERYSERVICE_SIG;
     PVOID KIMCADEFERREDRECOVERYSERVICE_MASK;
@@ -666,7 +682,10 @@ typedef struct _THEIA_CONTEXT
     //
     PVOID pKiExecuteAllDpcs;
     PVOID pKiRetireDpcList;
+    PVOID pKiDeliverApc;
     PVOID pKiCustomRecurseRoutineX; ///< IsPgRoutine | Callers: pKiCustomAccessRoutineX | Executed from IsrDispatchLevelExecuteCtx.
+    PVOID pKiBalanceSetManagerDeferredRoutine;
+    PVOID pKiBalanceSetManagerPeriodicDpc;
 
     //
     // The engineers of the PatchGuard component, for some reason unknown to me, did not add __noreturn for KiScanQueues/KiSchedulerDpc (Callers KiMcaDeferredRecoveryService), 
@@ -687,7 +706,7 @@ typedef struct _THEIA_CONTEXT
     PVOID pCcBcbProfiler;                ///< IsPgRoutine | Callers: Handler _KTIMER/_KDPC                         | Executed from IsrDispatchLevelExecuteCtx.
     PVOID pCcBcbProfiler2;               ///< IsPgRoutine | Callers: Handler _KTIMER/_KDPC                         | Executed from IsrDispatchLevelExecuteCtx.
     PVOID pKiDispatchCallout;            ///< IsPgRoutine | Callers: KiDeliverApc                                  | Executed from IsrApcLevelExecuteCtx.
-
+ 
     //
     // To prevent dead recursion when using ExAllocatePool2 with VsrExAllocatePool2.
     //
@@ -728,9 +747,10 @@ typedef struct _THEIA_CONTEXT
     BOOLEAN(__fastcall* pMmIsAddressValid)(PVOID VirtualAddress);
     BOOLEAN(__fastcall* pMmIsNonPagedSystemAddressValid)(PVOID VirtualAddress);
     PVOID(__stdcall* pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);
+    PVOID(__fastcall* pExFreePoolWithTag)(PVOID P, ULONG Tag);
     BOOLEAN(__fastcall* pPsIsSystemThread)(PETHREAD Thread);
     LONG_PTR(__fastcall* pObfDereferenceObject)(PVOID Object);
-    PVOID(__fastcall* pExFreePoolWithTag)(PVOID P, ULONG Tag);
+    PVOID pExQueueWorkItem;
   
     //
     // A5-Block.

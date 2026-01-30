@@ -92,7 +92,8 @@
       <TreatWarningAsError>false</TreatWarningAsError>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>FastCall</CallingConvention>
-      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <EntryPointSymbol>ImgEntry</EntryPointSymbol>
@@ -167,12 +168,14 @@
     <ClInclude Include="Stacx64.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PgUtils.h" />
+    <ClInclude Include="Voidx64.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="Clacx64.asm" />
     <MASM Include="GetIF.asm" />
     <MASM Include="DieBugCheck.asm" />
     <MASM Include="Stacx64.asm" />
+    <MASM Include="Voidx64.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

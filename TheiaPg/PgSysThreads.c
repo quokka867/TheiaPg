@@ -1,24 +1,24 @@
 #include "LinkHeader.h"
 
 /*++
-* Routine: BuilderStubApcRoutine
+* Routine: BuilderWrapperApcRoutine
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
 * Public/Private: Private
 *
-* @param Routine: Routine for stub KiDeliverApc (caller)
+* @param Routine: Routine for Wrapper-KiDeliverApc (caller)
 * 
 * Description: Important for BYOVD support, 
-* without stub, unwind current stack will not be able to correctly working without access to the .pdata segment TheiaPg.sys in memory.
+* without wrapper, unwind current stack will not be able to correctly working without access to the .pdata segment TheiaPg.sys in memory.
 --*/
-static PVOID BuilderStubApcRoutine(IN PVOID pRoutine)
+static PVOID BuilderWrapperApcRoutine(IN PVOID pRoutine)
 {
     #define ERROR_BUILD_STUB_APC_ROUTINE 0x0004b50fUI32
 
     CheckStatusTheiaCtx();
 
-    UCHAR CoreStubCall[] =
+    UCHAR CoreWrapperCall[] =
     {
       0x48, 0x89, 0xe5,                         // mov    rbp,rsp    
       0x48, 0x89, 0xe1,                         // mov    rcx,rsp
@@ -80,15 +80,15 @@ static PVOID BuilderStubApcRoutine(IN PVOID pRoutine)
 
     HrdPatchAttributesInputPte(0x7FFFFFFFFFFFFFFFUI64, 0UI64, pPageStub);
 
-    *(PVOID*)((PUCHAR)&CoreStubCall + 24) = pRoutine;
+    *(PVOID*)((PUCHAR)&CoreWrapperCall + 24) = pRoutine;
 
     memset(pPageStub, 0I32, PAGE_SIZE);
 
     memcpy(pPageStub, SaveContext, sizeof(SaveContext));
 
-    memcpy((PUCHAR)pPageStub + sizeof(SaveContext), CoreStubCall, sizeof(CoreStubCall));
+    memcpy((PUCHAR)pPageStub + sizeof(SaveContext), CoreWrapperCall, sizeof(CoreWrapperCall));
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall)), ClearSaveContext, sizeof(ClearSaveContext));
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreWrapperCall)), ClearSaveContext, sizeof(ClearSaveContext));
 
     return pPageStub;
 }
@@ -100,11 +100,11 @@ static PVOID BuilderStubApcRoutine(IN PVOID pRoutine)
 *
 * Public/Private: Private
 *
-* @param InputCtx: Context passed from StubApcRoutine
+* @param InputCtx: Context passed from WrapperApcRoutine
 *
 * Description: Required to intercept system threads that are executing code from an Unbacked-Region.
 --*/
-volatile static VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTINE pInputCtx)
+static volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTINE pInputCtx)
 {
     CheckStatusTheiaCtx();
 
@@ -180,7 +180,7 @@ volatile static VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTIN
 
     StackLow = *(PVOID*)(pCurrentObjThread + g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_StackLimit_OFFSET);
 
-    if (_IsAddressSafe(pInternalCtx->Rip))
+    if (_IsSafeAddress(pInternalCtx->Rip))
     {
         for (ULONG32 i = 0UI32; ; ++i)
         {
@@ -197,7 +197,7 @@ volatile static VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_STUBAPCROUTIN
 
             if ((pInternalCtx->Rsp >= StackHigh) || (pInternalCtx->Rsp <= StackLow) || (pInternalCtx->Rip < 0xffff800000000000UI64)) { break; } ///< The UserSpace address will not be marked as Unbacked.
 
-            if (!(_IsAddressSafe(pInternalCtx->Rip)))
+            if (!(_IsSafeAddress(pInternalCtx->Rip)))
             {
                 JmpDetectNonBackedStack:
 
@@ -366,7 +366,7 @@ VOID InitSearchPgSysThread(VOID)
 
     PKAPC_TRUE pKAPC = NULL;
 
-    PVOID pStubRoutine = BuilderStubApcRoutine(&SearchPgSysThreadRoutine);
+    PVOID pStubRoutine = BuilderWrapperApcRoutine(&SearchPgSysThreadRoutine);
 
     PVOID pExceptionObjThread = (PVOID)__readgsqword(0x188UI32);
 
@@ -400,7 +400,7 @@ VOID InitSearchPgSysThread(VOID)
 
                 *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_MiscFlags_OFFSET)) |= (0x1UI32 << 14UI32); ///< ApcQueueable: ON
 
-                g_pTheiaCtx->pKeInsertQueueApc(pKAPC, NULL, NULL, MAXIMUM_PRIORITY);
+                g_pTheiaCtx->pKeInsertQueueApc(pKAPC, IS_SAFE_KAPC_SIGNATURE, NULL, MAXIMUM_PRIORITY);
 
                 ++CouterInsertedAPCs;
             }

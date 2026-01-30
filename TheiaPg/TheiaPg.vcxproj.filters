@@ -80,6 +80,9 @@
     <Filter Include="Source Files\_TheiaPg\__InitTheiaCtx\KMetaData">
       <UniqueIdentifier>{c970fa82-3fea-4453-b26e-6369514b07ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Voidx64">
+      <UniqueIdentifier>{b3b9e10c-3de4-49ba-aea8-beade25e6e3a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImgEntry.c">
@@ -174,6 +177,9 @@
     <ClInclude Include="KMetaData.h">
       <Filter>Source Files\_TheiaPg\__InitTheiaCtx\KMetaData</Filter>
     </ClInclude>
+    <ClInclude Include="Voidx64.h">
+      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Voidx64</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="GetIF.asm">
@@ -187,6 +193,9 @@
     </MASM>
     <MASM Include="Stacx64.asm">
       <Filter>Source Files\_TheiaPg\__Hardware\_asm\Stacx64</Filter>
+    </MASM>
+    <MASM Include="Voidx64.asm">
+      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Voidx64</Filter>
     </MASM>
   </ItemGroup>
 </Project>

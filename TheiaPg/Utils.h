@@ -38,7 +38,7 @@
 
 extern PVOID _HeurisSearchKdpcInCtx(IN PCONTEXT pCtx);
 
-extern BOOLEAN _IsAddressSafe(IN PVOID pCheckAddress);
+extern BOOLEAN _IsSafeAddress(IN PVOID pCheckAddress);
 
 extern volatile PVOID g_pSpiiNonLargePage;
 

@@ -91,6 +91,15 @@ VOID TheiaEntry(VOID)
     DbgLog("[TheiaPg <+>] TheiaEntry: FixPgPrcbFields\n");
     
     g_pTheiaCtx->pKeIpiGenericCall(&SearchKdpcInPgPrcbFields, NULL);
+
+    DbgLog("[TheiaPg <+>] TheiaEntry: FixKiBalanceSetManagerPeriodicDpc\n");
+
+    if (((PKDPC)g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc)->DeferredRoutine != g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine)
+    {
+        DbgLog("[TheiaPg <+>] TheiaEntry: Detect PG DeferredRoutine in KiBalanceSetManagerPeriodicDpc\n");
+
+        ((PKDPC)g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc)->DeferredRoutine = g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine;
+    }
     
     RelatedDataICT.pHookRoutine = &VsrKiExecuteAllDpcs;
     RelatedDataICT.pBasePatch = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, g_pTheiaCtx->pKiExecuteAllDpcs, g_pTheiaCtx->TheiaMetaDataBlock.KIEXECUTEALLDPCS_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KIEXECUTEALLDPCS_MASK, &StopSig, sizeof StopSig);
@@ -127,7 +136,43 @@ VOID TheiaEntry(VOID)
     HkInitCallTrmpln(&RelatedDataICT);
     
     DbgLog("[TheiaPg <+>] TheiaEntry: VsrKiRetireDpcList is init\n");
-    
+
+    RelatedDataICT.pHookRoutine = &VsrKiDeliverApc;
+    RelatedDataICT.pBasePatch = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, g_pTheiaCtx->pKiDeliverApc, g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_SIG, g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_MASK, &StopSig, sizeof StopSig);
+
+    if (!RelatedDataICT.pBasePatch)
+    {
+        DbgLog("[TheiaPg <->] TheiaEntry: Base for Call-Trampoline VsrKiDeliverApc not found\n");
+
+        DieDispatchIntrnlError(ERROR_THEIA_ENTRY);
+    }
+
+    RelatedDataICT.pHandlerHook = g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_HANDLER;
+    RelatedDataICT.LengthHandler = g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_LEN_HANDLER;
+    RelatedDataICT.LengthAlignment = g_pTheiaCtx->TheiaMetaDataBlock.KIDELIVERAPC_HOOK_ALIGNMENT;
+
+    HkInitCallTrmpln(&RelatedDataICT);
+
+    DbgLog("[TheiaPg <+>] TheiaEntry: VsrKiDeliverApc is init\n");
+
+    RelatedDataICT.pHookRoutine = &VsrExQueueWorkItem;
+    RelatedDataICT.pBasePatch = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, g_pTheiaCtx->pExQueueWorkItem, g_pTheiaCtx->TheiaMetaDataBlock.EXQUEUEWORKITEM_SIG, g_pTheiaCtx->TheiaMetaDataBlock.EXQUEUEWORKITEM_MASK, &StopSig, sizeof StopSig);
+
+    if (!RelatedDataICT.pBasePatch)
+    {
+        DbgLog("[TheiaPg <->] TheiaEntry: Base for Call-Trampoline VsrExQueueWorkItem not found\n");
+
+        DieDispatchIntrnlError(ERROR_THEIA_ENTRY);
+    }
+
+    RelatedDataICT.pHandlerHook = g_pTheiaCtx->TheiaMetaDataBlock.EXQUEUEWORKITEM_HANDLER;
+    RelatedDataICT.LengthHandler = g_pTheiaCtx->TheiaMetaDataBlock.EXQUEUEWORKITEM_LEN_HANDLER;
+    RelatedDataICT.LengthAlignment = g_pTheiaCtx->TheiaMetaDataBlock.EXQUEUEWORKITEM_HOOK_ALIGNMENT;
+
+    HkInitCallTrmpln(&RelatedDataICT);
+
+    DbgLog("[TheiaPg <+>] TheiaEntry: VsrExQueueWorkItem is init\n");
+
     RelatedDataICT.pHookRoutine = &VsrExAllocatePool2; 
     RelatedDataICT.pBasePatch = _SearchPatternInRegion(NULL, SPIR_NO_OPTIONAL, g_pTheiaCtx->pExAllocatePool2, g_pTheiaCtx->TheiaMetaDataBlock.EXALLOCATEPOOL2_SIG, g_pTheiaCtx->TheiaMetaDataBlock.EXALLOCATEPOOL2_MASK, &StopSig, sizeof StopSig);
     

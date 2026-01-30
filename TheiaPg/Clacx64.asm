@@ -1,3 +1,5 @@
+PUBLIC HrdClacx64
+
 _TEXT SEGMENT
 
 HrdClacx64 PROC

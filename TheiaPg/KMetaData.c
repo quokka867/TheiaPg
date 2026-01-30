@@ -2,11 +2,10 @@
 
 CONST UCHAR _25h2_w11_HandlerVsrKiExecuteAllDpcs[] =
 {
-   0x4c,0x8d, 0x80, 0x2c, 0x01, 0x00, 0x00, // lea     r8, [rax+12Ch]
-   0x4f, 0x8d, 0x04, 0x40,                  // lea     r8, [r8+r8*2]
-   0x49, 0xc1, 0xe0, 0x04                   // shl     r8, 4
+  0x4c,0x8d, 0x80, 0x2c, 0x01, 0x00, 0x00, // lea     r8, [rax+12Ch]
+  0x4f, 0x8d, 0x04, 0x40,                  // lea     r8, [r8+r8*2]
+  0x49, 0xc1, 0xe0, 0x04                   // shl     r8, 4
 };
-
 CONST UCHAR _25h2_w11_KiExecuteAllDpcs_SIG[] = ///< For hook.
 {
   0x4c, 0x8d, 0x80, 0x2c, 0x01, 0x00, 0x00, // lea     r8, [rax+12Ch]
@@ -15,6 +14,7 @@ CONST UCHAR _25h2_w11_KiExecuteAllDpcs_SIG[] = ///< For hook.
 };
 CONST UCHAR _25h2_w11_KiExecuteAllDpcs_MASK[sizeof _25h2_w11_KiExecuteAllDpcs_SIG] = { "xxxxxxxxxxxxxxx" };
 
+
 CONST UCHAR _25h2_w11_HandlerVsrKiRetireDpcList[] =
 {
   0x48, 0x8b, 0xd9,                         // mov     rbx, rcx
@@ -22,7 +22,6 @@ CONST UCHAR _25h2_w11_HandlerVsrKiRetireDpcList[] =
   0x48, 0x8d, 0x4d, 0xc4,                   // lea     rcx,[rbp - 3Ch]
   0x33, 0xd2                                // xor     edx, edx
 };
-
 CONST UCHAR _25h2_w11_KiRetireDpcList_SIG[] = ///< For hook.
 {
   0x48, 0x8b, 0xd9,                         // mov     rbx, rcx           
@@ -32,19 +31,57 @@ CONST UCHAR _25h2_w11_KiRetireDpcList_SIG[] = ///< For hook.
 };
 CONST UCHAR _25h2_w11_KiRetireDpcList_MASK[sizeof _25h2_w11_KiRetireDpcList_SIG] = { "xxxxxxxxxxxxx" };
 
+
+CONST UCHAR _25h2_w11_Handler_KiDeliverApc[] =
+{
+  0x45, 0x33, 0xdb,                         // xor     r11d, r11d
+  0x49, 0x8b, 0xf8,					        // mov     rdi, r8
+  0x4c, 0x89, 0x5d, 0xe0,			        // mov     qword ptr [rbp - 20h], r11
+  0x44, 0x0f, 0xb6, 0xe9				    // movzx   r13d, cl
+};
+CONST UCHAR _25h2_w11_KiDeliverApc_SIG[] = ///< For hook.
+{
+  0x45, 0x33, 0xdb,                         // xor      r11d, r11d
+  0x49, 0x8b, 0xf8,						    // mov      rdi, r8
+  0x4c, 0x89, 0x5d, 0xe0,				    // mov      qword ptr [rbp - 20h], r11
+  0x44, 0x0f, 0xb6, 0xe9,				    // movzx    r13d, cl
+  0x4c, 0x89, 0x5d, 0xe8, 				    // mov      qword ptr [rbp - 18h], r11
+  0x4c, 0x89, 0x5d, 0xd8,				    // mov      qword ptr [rbp - 28h], r11
+  0x4c, 0x89, 0x5d, 0x50,				    // mov      qword ptr [rbp + 50h], r11
+  0x4d, 0x85, 0xc0						    // test     r8, r8
+};
+CONST UCHAR _25h2_w11_KiDeliverApc_MASK[sizeof _25h2_w11_KiDeliverApc_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx" };
+
+
+CONST UCHAR _25h2_w11_HandlerVsrExQueueWorkItem[] =
+{
+  0x50,                                     // push    rax
+  0x48, 0xB8, 0x00, 0x00, 0x00, 0x00,       // mov     rax, 0FFFF800000000000h
+  0x00, 0x80, 0xFF, 0xFF,
+  0x4C, 0x3B, 0xC8,                         // cmp     r9, rax
+  0x58                                      // pop     rax
+};
+CONST UCHAR _25h2_w11_ExQueueWorkItem_SIG[] = ///< For hook.
+{
+  0x48, 0xB8, 0x00, 0x00, 0x00, 0x00,       // mov     rax, 0FFFF800000000000h
+  0x00, 0x80, 0xFF, 0xFF,
+  0x4C, 0x3B, 0xC8                          // cmp     r9, rax
+};
+CONST UCHAR _25h2_w11_ExQueueWorkItem_MASK[sizeof _25h2_w11_ExQueueWorkItem_SIG] = { "xxxxxxxxxxxxx" };
+
+
 CONST UCHAR _25h2_w11_HandlerVsrExAllocatePool2[] =
 {
-   0x48, 0x83, 0xc4, 0x10,                  // add     rsp, 010h
-   0x41, 0x5f,                              // pop     r15
-   0x41, 0x5e,                              // pop     r14 
-   0x41, 0x5d,                              // pop     r13
-   0x41, 0x5c,                              // pop     r12
-   0x5f,                                    // pop     rdi
-   0x5e,                                    // pop     rsi
-   0x5d,                                    // pop     rbp
-   0xc3                                     // ret
+  0x48, 0x83, 0xc4, 0x10,                   // add     rsp, 010h
+  0x41, 0x5f,                               // pop     r15
+  0x41, 0x5e,                               // pop     r14 
+  0x41, 0x5d,                               // pop     r13
+  0x41, 0x5c,                               // pop     r12
+  0x5f,                                     // pop     rdi
+  0x5e,                                     // pop     rsi
+  0x5d,                                     // pop     rbp
+  0xc3                                      // ret
 };
-
 CONST UCHAR _25h2_w11_ExAllocatePool2_SIG[] = ///< For hook.
 {
   0x41, 0x5f,                               // pop     r15
@@ -58,6 +95,7 @@ CONST UCHAR _25h2_w11_ExAllocatePool2_SIG[] = ///< For hook.
 };
 CONST UCHAR _25h2_w11_ExAllocatePool2_MASK[sizeof _25h2_w11_ExAllocatePool2_SIG] = { "xxxxxxxxxxxx" };
 
+
 CONST UCHAR _25h2_w11_HandlerVsrKiCustomRecurseRoutineX[] =
 {
   0x48, 0x89, 0xc4,                         // mov     rsp,rax
@@ -66,20 +104,39 @@ CONST UCHAR _25h2_w11_HandlerVsrKiCustomRecurseRoutineX[] =
   0xcc,                                     // int3
   0xcc                                      // int3
 };
-
 CONST UCHAR _25h2_w11_KiCustomRecurseRoutineX_SIG[] = ///< For hook.
 {
-0xff, 0xc9,                                 // dec     ecx
-0x74, 0x00,                                 // je      ntkrnlmp!KiCustomRecurseRoutineX+0xd 
-0xe8, 0xb3, 0xfa, 0xff, 0xff,               // call    ntkrnlmp!KiCustomRecurseRoutineX
-0x8b, 0x02,                                 // mov     eax, dword ptr [rdx]
-0x48, 0x83, 0xc4, 0x28,                     // add     rsp, 28h
-0xc3,                                       // ret 
-0xcc,                                       // int 3
-0xcc,                                       // int 3
-0xcc                                        // int 3
+  0xff, 0xc9,                               // dec     ecx
+  0x74, 0x00,                               // je      ntkrnlmp!KiCustomRecurseRoutineX+0xd 
+  0xe8, 0xb3, 0xfa, 0xff, 0xff,             // call    ntkrnlmp!KiCustomRecurseRoutineX
+  0x8b, 0x02,                               // mov     eax, dword ptr [rdx]
+  0x48, 0x83, 0xc4, 0x28,                   // add     rsp, 28h
+  0xc3,                                     // ret 
+  0xcc,                                     // int 3
+  0xcc,                                     // int 3
+  0xcc                                      // int 3
 };
 CONST UCHAR _25h2_w11_KiCustomRecurseRoutineX_MASK[sizeof _25h2_w11_KiCustomRecurseRoutineX_SIG] = { "xxx?x????xxxxxxxxxx" };
+
+
+CONST UCHAR _25h2_w11_KiBalanceSetManagerDeferredRoutine_SIG[] = ///< For fix.
+{
+  0x48, 0x8b, 0xc4, 0x48, 0x89,
+  0x58, 0x08, 0x48, 0x89, 0x70,
+  0x18, 0x48, 0x89, 0x78, 0x20,
+  0x48, 0x89, 0x50, 0x10, 0x41,
+  0x56, 0x48, 0x81, 0xec, 0x50,
+  0x01, 0x00, 0x00, 0x48, 0x89,
+  0xa4, 0x24, 0x40, 0x01, 0x00,
+  0x00, 0x4d, 0x8b, 0xf1, 0x49,
+  0x8b, 0xf0, 0x48, 0x8b, 0xda,
+  0x48, 0x8b, 0xf9, 0x33, 0xd2,
+  0x44, 0x8d, 0x42, 0x5f, 0x48,
+  0x8d, 0x88, 0x38, 0xff, 0xff,
+  0xff, 0x00, 0x00, 0x00, 0x00
+};
+CONST UCHAR _25h2_w11_KiBalanceSetManagerDeferredRoutine_MASK[sizeof _25h2_w11_KiBalanceSetManagerDeferredRoutine_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????" };
+
 
 CONST UCHAR _25h2_w11_KiMcaDeferredRecoveryService_SIG[] = ///< For fix.
 {
@@ -91,6 +148,7 @@ CONST UCHAR _25h2_w11_KiMcaDeferredRecoveryService_SIG[] = ///< For fix.
   0xf8, 0x00, 0x00, 0x00, 0x00,
 };
 CONST UCHAR _25h2_w11_KiMcaDeferredRecoveryService_MASK[sizeof _25h2_w11_KiMcaDeferredRecoveryService_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxx????" };
+
 
 CONST UCHAR _25h2_w11_FsRtlUninitializeSmallMcb_SIG[] = ///< For fix.
 {
@@ -104,6 +162,7 @@ CONST UCHAR _25h2_w11_FsRtlUninitializeSmallMcb_SIG[] = ///< For fix.
  0xe8, 0x07, 0x00, 0x00, 0x00
 };
 CONST UCHAR _25h2_w11_FsRtlUninitializeSmallMcb_MASK[sizeof _25h2_w11_FsRtlUninitializeSmallMcb_SIG] = { "xxxxx????xxxxxxxxxxxxxx?xxxxxxxxxxxxxxx?" };
+
 
 CONST UCHAR _25h2_w11_FsRtlTruncateSmallMcb_SIG[] = ///< For fix.
 {
@@ -125,6 +184,7 @@ CONST UCHAR _25h2_w11_FsRtlTruncateSmallMcb_SIG[] = ///< For fix.
 };
 CONST UCHAR _25h2_w11_FsRtlTruncateSmallMcb_MASK[sizeof _25h2_w11_FsRtlTruncateSmallMcb_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxxxxxx????xxxxxxxxxx" };
 
+
 CONST UCHAR _25h2_w11_KiDecodeMcaFault_SIG[] = ///< For fix.
 {
   0x48, 0x89, 0x5c, 0x24, 0x08,
@@ -143,6 +203,7 @@ CONST UCHAR _25h2_w11_KiDecodeMcaFault_SIG[] = ///< For fix.
 };
 CONST UCHAR _25h2_w11_KiDecodeMcaFault_MASK[sizeof _25h2_w11_KiDecodeMcaFault_SIG] = { "xxxxxxxxxxxxxxxx????xxxxxxxxxxxxxx????xxxxxxxxxxxxxxxxx????x?????" };
 
+
 CONST UCHAR _25h2_w11_CcBcbProfiler_SIG[] = ///< For fix.
 {
   0x48, 0x89, 0x5c, 0x24, 0x08,
@@ -154,6 +215,7 @@ CONST UCHAR _25h2_w11_CcBcbProfiler_SIG[] = ///< For fix.
   0xf2, 0xe8, 0x00, 0x00, 0x00
 };
 CONST UCHAR _25h2_w11_CcBcbProfiler_MASK[sizeof _25h2_w11_CcBcbProfiler_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx???" };
+
 
 CONST UCHAR _25h2_w11_CcBcbProfiler2_SIG[] = ///< For fix.
 {
@@ -169,6 +231,7 @@ CONST UCHAR _25h2_w11_CcBcbProfiler2_SIG[] = ///< For fix.
 };
 CONST UCHAR _25h2_w11_CcBcbProfiler2_MASK[sizeof _25h2_w11_CcBcbProfiler2_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxxx????" };
 
+
 CONST UCHAR _25h2_w11_KiDispatchCallout_SIG[] = ///< For fix.
 {
   0x48, 0x89, 0x5c, 0x24, 0x10,
@@ -183,6 +246,7 @@ CONST UCHAR _25h2_w11_KiDispatchCallout_SIG[] = ///< For fix.
   0x47, 0x48, 0x00, 0x00, 0x00
 };
 CONST UCHAR _25h2_w11_KiDispatchCallout_MASK[sizeof _25h2_w11_KiDispatchCallout_SIG] = { "xxxxxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxxxxxxxxxxx???" };
+
 
 CONST UCHAR _25h2_w11_MmAllocateIndependentPagesEx_SIG[] = ///< For using.
 {
@@ -200,6 +264,7 @@ CONST UCHAR _25h2_w11_MmAllocateIndependentPagesEx_SIG[] = ///< For using.
   0xe9
 };
 CONST UCHAR _25h2_w11_MmAllocateIndependentPagesEx_MASK[sizeof _25h2_w11_MmAllocateIndependentPagesEx_SIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" };
+
 
 CONST UCHAR _25h2_w11_MmFreeIndependentPages_SIG[] = ///< For using.
 {

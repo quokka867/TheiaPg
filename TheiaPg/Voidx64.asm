@@ -1,0 +1,13 @@
+PUBLIC Voidx64
+
+_TEXT SEGMENT
+
+Voidx64 PROC
+
+ret
+
+Voidx64 ENDP
+
+_TEXT ENDS
+
+END 

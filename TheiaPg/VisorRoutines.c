@@ -7,23 +7,27 @@
 *
 * Public/Private: Public
 *
-* @param InputCtx: Context passed from StubCallTrmpln
+* @param InputCtx: Context passed from WrapperCallTrmpln
 *
-* Description: Hook KiExecuteAllDpcs for controling _KDPC in DPC_QUEUE current Cpu-Core.
+* Description: Hook KiExecuteAllDpcs for controling _KDPC in QUEUE_DPC current Cpu-Core.
 --*/
 volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
 {
     CheckStatusTheiaCtx();
 
-    UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
+    CONST UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
 
-    UCHAR ReasonDetect1[] = { "PG DeferredContext" };
+    CONST UCHAR ReasonDetect1[] = { "PG DeferredContext" };
 
-    UCHAR TypeDetect = 2UI8;
+    CONST UCHAR ReasonDetect2[] = { "PG SystemArgument1" };
 
-    BOOLEAN OldIF = FALSE;
+    CONST UCHAR ReasonDetect3[] = { "PG SystemArgument2" };
 
-    CONST UCHAR RetOpcode = 0xC3UI8;
+    CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
+
+    UCHAR TypeDetect = 4UI8;
+
+    CONST UCHAR RetOpcode = 0xc3UI8;
 
     PVOID pDpcListHead[2] = { 0 };
 
@@ -39,52 +43,123 @@ volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
 
     pDpcListHead[DPC_THREADED] = (PVOID)__readgsqword((g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_DpcData1_OFFSET)); ///< Get address first node DPC_THREADED_QUEUE.
 
-    PKDPC pCurrentKDPC = NULL;
+    PKDPC pCurrKDPC = NULL;
 
-    BOOLEAN FlagCurrentQueue = FALSE; ///< FALSE: DPC_NORMAL & TRUE: DPC_THREADED
+    BOOLEAN FlagCurrQueue = FALSE; ///< FALSE: DPC_NORMAL & TRUE: DPC_THREADED
 
-    BOOLEAN LockCurrentQueue = FALSE;
+    BOOLEAN LockCurrQueue = FALSE;
+
+    ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
     for(; ;)
     {
-        if (!FlagCurrentQueue && !LockCurrentQueue)
+        if (!FlagCurrQueue && !LockCurrQueue)
         {
-            if (!pDpcListHead[DPC_NORMAL]) { FlagCurrentQueue = TRUE; }
-            else { pCurrentKDPC = CONTAINING_RECORD(pDpcListHead[DPC_NORMAL], KDPC, DpcListEntry); LockCurrentQueue = TRUE; }
+            if (!pDpcListHead[DPC_NORMAL]) { FlagCurrQueue = TRUE; }
+            else { pCurrKDPC = CONTAINING_RECORD(pDpcListHead[DPC_NORMAL], KDPC, DpcListEntry); LockCurrQueue = TRUE; }
         }
 
-        if (FlagCurrentQueue && !LockCurrentQueue)
+        if (FlagCurrQueue && !LockCurrQueue)
         {
             if (!pDpcListHead[DPC_THREADED]) { break; }
-            else { pCurrentKDPC = CONTAINING_RECORD(pDpcListHead[DPC_THREADED], KDPC, DpcListEntry); LockCurrentQueue = TRUE; }
+            else { pCurrKDPC = CONTAINING_RECORD(pDpcListHead[DPC_THREADED], KDPC, DpcListEntry); LockCurrQueue = TRUE; }
         }
 
-        if (!(_IsAddressSafe(pCurrentKDPC->DeferredRoutine))) 
+        if (!(_IsSafeAddress(pCurrKDPC->DeferredRoutine)))
         { 
             TypeDetect = 0UI8;
-        }       
-        else if (!(g_pTheiaCtx->pMmIsAddressValid(pCurrentKDPC->DeferredContext)) && (((ULONG64)pCurrentKDPC->DeferredContext) & ~0x03I64))
-        {
-            TypeDetect = 1UI8;
-        }
-        else { VOID; } ///< For clarity.
 
-        if (TypeDetect < 2)
-        {
-            DbgLog("[TheiaPg <+>] VsrKiExecuteAllDpcs: Detect possibly PG-KDPC | Reason: %s | _KDPC: 0x%I64X | DeferredRoutine: 0x%I64X | DeferredContext: 0x%I64X\n\n", ((!TypeDetect) ? ReasonDetect0 : ReasonDetect1), pCurrentKDPC, pCurrentKDPC->DeferredRoutine, pCurrentKDPC->DeferredContext);
-
-            DataIndpnRWVMem.pVa = pCurrentKDPC->DeferredRoutine;
-
-            HrdIndpnRWVMemory(&DataIndpnRWVMem);
-
-            TypeDetect = 2UI32;
+            goto DetectPgKDPC;
         }
 
-        if (!(pCurrentKDPC->DpcListEntry.Next) && !FlagCurrentQueue) { FlagCurrentQueue = TRUE; LockCurrentQueue = FALSE; continue; }
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->DeferredContext) && (((ULONG64)pCurrKDPC->DeferredContext >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKDPC->DeferredContext == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->DeferredContext)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
+                TypeDetect = 1UI8;
 
-        else if (!(pCurrentKDPC->DpcListEntry.Next) && FlagCurrentQueue) { break; }
+                goto DetectPgKDPC;
+            }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKDPC->DeferredContext >> 32) && (ULONG32)((ULONG64)pCurrKDPC->DeferredContext & 0xffffffffUI64))
+            {
+                TypeDetect = 1UI8;
 
-        else { pCurrentKDPC = CONTAINING_RECORD(pCurrentKDPC->DpcListEntry.Next, KDPC, DpcListEntry); }
+                goto DetectPgKDPC;
+            }
+        }
+
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->SystemArgument1) && (((ULONG64)pCurrKDPC->SystemArgument1 >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKDPC->SystemArgument1 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->SystemArgument1)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
+                TypeDetect = 2UI8;
+
+                goto DetectPgKDPC;
+            }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKDPC->SystemArgument1 >> 32) && (ULONG32)((ULONG64)pCurrKDPC->SystemArgument1 & 0xffffffffUI64))
+            {
+                TypeDetect = 2UI8;
+
+                goto DetectPgKDPC;
+            }
+        }
+
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->SystemArgument2) && (((ULONG64)pCurrKDPC->SystemArgument2 >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKDPC->SystemArgument2 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->SystemArgument2)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
+                TypeDetect = 3UI8;
+            }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKDPC->SystemArgument2 >> 32) && (ULONG32)((ULONG64)pCurrKDPC->SystemArgument2 & 0xffffffffUI64))
+            {
+                TypeDetect = 3UI8;
+            }
+        }
+
+        DetectPgKDPC:
+
+        if (TypeDetect < 4)
+        {
+            DbgLog("[TheiaPg <+>] VsrKiExecuteAllDpcs: Detect possibly PG-KDPC | CpuCore: 0x%I32X\n", CurrCoreNum);
+            DbgLog("============================================================\n");
+            DbgLog("Reason:          %s\n", ((!TypeDetect) ?
+                         ReasonDetect0 : (TypeDetect == 1) ?
+                         ReasonDetect1 : (TypeDetect == 2) ?
+                         ReasonDetect2 : (TypeDetect == 3) ?
+                         ReasonDetect3 : ReasonDetectError));
+            DbgLog("_KDPC:           0x%I64X\n", pCurrKDPC);
+            DbgLog("DeferredRoutine: 0x%I64X\n", pCurrKDPC->DeferredRoutine);
+            DbgLog("DeferredContext: 0x%I64X\n", pCurrKDPC->DeferredContext);
+            DbgLog("SystemArgument1: 0x%I64X\n", pCurrKDPC->SystemArgument1);
+            DbgLog("SystemArgument2: 0x%I64X\n", pCurrKDPC->SystemArgument2);
+            DbgLog("CpuCore:         0x%I32X\n", CurrCoreNum);
+            DbgLog("============================================================\n\n");
+
+            if (pCurrKDPC->DeferredRoutine != g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine)
+            {
+                DataIndpnRWVMem.pVa = pCurrKDPC->DeferredRoutine;
+
+                HrdIndpnRWVMemory(&DataIndpnRWVMem);
+            }
+            else { pCurrKDPC->DeferredRoutine = &Voidx64; }
+            
+            TypeDetect = 4UI8;
+        }
+
+        if (!(pCurrKDPC->DpcListEntry.Next) && !FlagCurrQueue) { FlagCurrQueue = TRUE; LockCurrQueue = FALSE; continue; }
+
+        else if (!(pCurrKDPC->DpcListEntry.Next) && FlagCurrQueue) { break; }
+
+        else { pCurrKDPC = CONTAINING_RECORD(pCurrKDPC->DpcListEntry.Next, KDPC, DpcListEntry); }
     }
 
     return;
@@ -97,37 +172,45 @@ volatile VOID VsrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICT pInputCtx)
 *
 * Public/Private: Public
 *
-* @param InputCtx: Context passed from StubCallTrmpln
+* @param InputCtx: Context passed from WrapperCallTrmpln
 *
-* Description: Hook VsrKiRetireDpcList for controling _KDPC in Timer-Tables current Cpu-Core.
+* Description: Hook KiRetireDpcList for controling _KDPC in Tables-KTIMERs current Cpu-Core.
 --*/
 volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
 {
     CheckStatusTheiaCtx();
 
-    UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
+    CONST UCHAR ReasonDetect0[] = { "Unbacked DeferredRoutine" };
 
-    UCHAR ReasonDetect1[] = { "PG DeferredContext" };
+    CONST UCHAR ReasonDetect1[] = { "PG DeferredContext" };
 
-    UCHAR TypeDetect = 2UI8;
+    CONST UCHAR ReasonDetect2[] = { "PG SystemArgument1" };
 
-    CONST UCHAR RetOpcode = 0xC3UI8;
+    CONST UCHAR ReasonDetect3[] = { "PG SystemArgument2" };
+
+    CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
+
+    UCHAR TypeDetect = 4UI8;
+
+    CONST UCHAR RetOpcode = 0xc3UI8;
 
     BOOLEAN OldIF = FALSE;
 
-    PKTIMER_TABLE_ENTRY pCurrentKTimerTableEntry = NULL;
+    PKTIMER_TABLE_ENTRY pCurrKTimerTableEntry = NULL;
 
-    PKTIMER pCurrentKtimer = NULL;
+    PKTIMER pCurrKTIMER = NULL;
 
-    PKDPC pCurrKdpc = NULL;
+    PKDPC pCurrKDPC= NULL;
 
-    pCurrentKTimerTableEntry = (PKTIMER_TABLE_ENTRY) & (((PKTIMER_TABLE)(__readgsqword(0x20I32) + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_TimerTable))->TimerEntries);
+    pCurrKTimerTableEntry = (PKTIMER_TABLE_ENTRY) & (((PKTIMER_TABLE)(__readgsqword(0x20I32) + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_TimerTable))->TimerEntries);
+
+    ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
     for (USHORT i = 0UI16; i < 512; ++i)
     {
-        if (((pCurrentKtimer = ((pCurrentKTimerTableEntry + i)->Entry.Flink)) != &((pCurrentKTimerTableEntry + i)->Entry)))
+        if (((pCurrKTIMER = ((pCurrKTimerTableEntry + i)->Entry.Flink)) != &((pCurrKTimerTableEntry + i)->Entry)))
         {
-            pCurrentKtimer = CONTAINING_RECORD(pCurrentKtimer, KTIMER, TimerListEntry);
+            pCurrKTIMER = CONTAINING_RECORD(pCurrKTIMER, KTIMER, TimerListEntry);
         }
         else { continue; }
 
@@ -146,51 +229,403 @@ volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
             // 
             // v34 = KiWaitAlways ^ _byteswap_uint64(v9 ^ __ROL8__(KiWaitNever ^ *(_QWORD *)(v9 + 48), KiWaitNever));
             // 
-   
-            pCurrKdpc = (PKDPC)(*(g_pTheiaCtx->ppKiWaitAlways) ^ _byteswap_uint64((ULONG64)(pCurrentKtimer) ^ _rotl64(*(g_pTheiaCtx->ppKiWaitNever) ^ (ULONG64)(pCurrentKtimer->Dpc), (UCHAR) * (g_pTheiaCtx->ppKiWaitNever))));
+            pCurrKDPC = (PKDPC)(*(g_pTheiaCtx->ppKiWaitAlways) ^ _byteswap_uint64((ULONG64)(pCurrKTIMER) ^ _rotl64(*(g_pTheiaCtx->ppKiWaitNever) ^ (ULONG64)(pCurrKTIMER->Dpc), (UCHAR) * (g_pTheiaCtx->ppKiWaitNever))));
 
-            if (!pCurrKdpc) { goto SkipCheckKDPC; }
+            if (!pCurrKDPC || !(g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC))) { goto SkipCheckKTIMER; }
+        
+            if (*(PUCHAR)(pCurrKDPC->DeferredRoutine) == 0xc3UI8) { goto SkipCheckKTIMER; }
 
-            if (!(g_pTheiaCtx->pMmIsAddressValid(pCurrKdpc))) { goto SkipCheckKDPC; }
-            
-            if (*(PUCHAR)(pCurrKdpc->DeferredRoutine) == 0xC3UI8) { goto SkipCheckKDPC; }
-
-            if (!(_IsAddressSafe(pCurrKdpc->DeferredRoutine)))
+            if (!(_IsSafeAddress(pCurrKDPC->DeferredRoutine)))
             {
                 TypeDetect = 0UI8;
+
+                goto DetectPgKTIMER;
             }
-            else if (!(g_pTheiaCtx->pMmIsAddressValid(pCurrKdpc->DeferredContext)) && (((ULONG64)(pCurrKdpc->DeferredContext)) & ~0x03I64))
+            
+            if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->DeferredContext) && (((ULONG64)pCurrKDPC->DeferredContext >> 47) == 0x1FFFFUI64)))
             {
-                TypeDetect = 1UI8;
+                if ((*(PULONG64)pCurrKDPC->DeferredContext == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->DeferredContext)) & 0x8000000000000802UI64) == 0x802UI64)))
+                {
+                    TypeDetect = 1UI8;
+
+                    goto DetectPgKTIMER;
+                }
             }
-            else { VOID; } ///< For clarity.
-
-            if (TypeDetect < 2)
+            else
             {
-                DbgLog("[TheiaPg <+>] VsrKiRetireDpcList: Detect possibly PG-KTIMER | Reason: %s | _KTIMER: 0x%I64X | _KDPC: 0x%I64X | DeferredRoutine: 0x%I64X | DeferredContext: 0x%I64X\n\n", ((!TypeDetect) ? ReasonDetect0 : ReasonDetect1), pCurrentKtimer, pCurrKdpc, pCurrKdpc->DeferredRoutine, pCurrKdpc->DeferredContext);
-    
-                if (OldIF = HrdGetIF()) { _disable(); }
+                if ((ULONG32)((ULONG64)pCurrKDPC->DeferredContext >> 32) && (ULONG32)((ULONG64)pCurrKDPC->DeferredContext & 0xffffffffUI64))
+                {
+                    TypeDetect = 1UI8;
 
-                HrdGetPteInputVa(pCurrKdpc->DeferredRoutine)->Dirty1 = 1;
+                    goto DetectPgKTIMER;
+                }
+            }
 
-                __writecr3(__readcr3());
+            if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->SystemArgument1) && (((ULONG64)pCurrKDPC->SystemArgument1 >> 47) == 0x1FFFFUI64)))
+            {
+                if ((*(PULONG64)pCurrKDPC->SystemArgument1 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->SystemArgument1)) & 0x8000000000000802UI64) == 0x802UI64)))
+                {
+                    TypeDetect = 2UI8;
 
-                *(PUCHAR)pCurrKdpc->DeferredRoutine = 0xC3UI8;
+                    goto DetectPgKTIMER;
+                }
+            }
+            else
+            {
+                if ((ULONG32)((ULONG64)pCurrKDPC->SystemArgument1 >> 32) && (ULONG32)((ULONG64)pCurrKDPC->SystemArgument1 & 0xffffffffUI64))
+                {
+                    TypeDetect = 2UI8;
 
-                HrdGetPteInputVa(pCurrKdpc->DeferredRoutine)->Dirty1 = 0;
+                    goto DetectPgKTIMER;
+                }
+            }
 
-                __writecr3(__readcr3());
+            if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC->SystemArgument2) && (((ULONG64)pCurrKDPC->SystemArgument2 >> 47) == 0x1FFFFUI64)))
+            {
+                if ((*(PULONG64)pCurrKDPC->SystemArgument2 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKDPC->SystemArgument2)) & 0x8000000000000802UI64) == 0x802UI64)))
+                {
+                    TypeDetect = 3UI8;
+                }
+            }
+            else
+            {
+                if ((ULONG32)((ULONG64)pCurrKDPC->SystemArgument2 >> 32) && (ULONG32)((ULONG64)pCurrKDPC->SystemArgument2 & 0xffffffffUI64))
+                {
+                    TypeDetect = 3UI8;
+                }
+            }
 
-                if (OldIF) { _enable(); }
+        DetectPgKTIMER:
 
+            if (TypeDetect < 4)
+            {
+                DbgLog("[TheiaPg <+>] VsrKiRetireDpcList: Detect possibly PG-KTIMER | CpuCore: 0x%I32X\n", CurrCoreNum);
+                DbgLog("=============================================================\n");
+                DbgLog("Reason:          %s\n", ((!TypeDetect) ?
+                             ReasonDetect0 : (TypeDetect == 1) ?
+                             ReasonDetect1 : (TypeDetect == 2) ?
+                             ReasonDetect2 : (TypeDetect == 3) ?
+                             ReasonDetect3 : ReasonDetectError));
+                DbgLog("_KTIMER:         0x%I64X\n", pCurrKTIMER);
+                DbgLog("_KDPC:           0x%I64X\n", pCurrKDPC);
+                DbgLog("DeferredRoutine: 0x%I64X\n", pCurrKDPC->DeferredRoutine);
+                DbgLog("DeferredContext: 0x%I64X\n", pCurrKDPC->DeferredContext);
+                DbgLog("SystemArgument1: 0x%I64X\n", pCurrKDPC->SystemArgument1);
+                DbgLog("SystemArgument2: 0x%I64X\n", pCurrKDPC->SystemArgument2);
+                DbgLog("CpuCore:         0x%I32X\n", CurrCoreNum);
+                DbgLog("=============================================================\n\n");
+
+                if (pCurrKDPC->DeferredRoutine != g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine)
+                {
+                    if (OldIF = HrdGetIF()) { _disable(); }
+
+                    HrdGetPteInputVa(pCurrKDPC->DeferredRoutine)->Dirty1 = 1;
+
+                    __writecr3(__readcr3());
+
+                    *(PUCHAR)pCurrKDPC->DeferredRoutine = 0xc3UI8;
+
+                    HrdGetPteInputVa(pCurrKDPC->DeferredRoutine)->Dirty1 = 0;
+
+                    __writecr3(__readcr3());
+
+                    if (OldIF) { _enable(); }
+                }
+                else { pCurrKDPC->DeferredRoutine = &Voidx64; }
+
+                TypeDetect = 4UI8;
+            }
+
+            SkipCheckKTIMER:
+
+            pCurrKTIMER = CONTAINING_RECORD(pCurrKTIMER->TimerListEntry.Flink, KTIMER, TimerListEntry);
+
+        } while (&(pCurrKTIMER->TimerListEntry) != &((pCurrKTimerTableEntry + i)->Entry));
+    }
+
+    return;
+}
+
+/*++
+* Routine: VsrKiDeliverApc
+*
+* MaxIRQL: DISPATCH_LEVEL
+*
+* Public/Private: Public
+*
+* @param InputCtx: Context passed from WrapperCallTrmpln
+*
+* Description: Hook KiDeliverApc for controling _KDPC in QUEUE_APCs current Thread-Obj.
+--*/
+volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
+{
+    CheckStatusTheiaCtx();
+
+    CONST UCHAR ReasonDetect0[] = { "Unbacked KernelRoutine" };
+
+    CONST UCHAR ReasonDetect1[] = { "Unbacked NormalRoutine" };
+
+    CONST UCHAR ReasonDetect2[] = { "PG NormalContext" };
+
+    CONST UCHAR ReasonDetect3[] = { "PG SystemArgument1" };
+
+    CONST UCHAR ReasonDetect4[] = { "PG SystemArgument2" };
+
+    CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
+
+    UCHAR TypeDetect = 5UI8;
+
+    CONST UCHAR RetOpcode = 0xc3UI8;
+
+    INDPN_RW_V_MEMORY_DATA DataIndpnRWVMem = { 0 };
+
+    DataIndpnRWVMem.FlagsExecute = MEM_INDPN_RW_WRITE_OP_BIT;
+
+    DataIndpnRWVMem.pIoBuffer = &RetOpcode;
+
+    DataIndpnRWVMem.LengthRW = 1UI64;
+
+    BOOLEAN OldIF = FALSE;
+
+    if (OldIF = HrdGetIF()) { _disable(); }
+
+    PVOID pCurrObjThread = (PVOID)__readgsqword(0x188UI32);
+
+    PKAPC_STATE pCurrKAPCState = (PKAPC_STATE)((PUCHAR)pCurrObjThread + g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_ApcState_OFFSET); ///< Pointer to Head-QueueKernelApcs.
+
+    PKAPC_TRUE pCurrKAPC = ((PLIST_ENTRY)&(pCurrKAPCState->ApcListHead[KernelMode]))->Flink;
+
+    if (pCurrKAPC == pCurrKAPCState) { goto Exit; }
+
+    pCurrKAPC = CONTAINING_RECORD(pCurrKAPC, KAPC_TRUE, ApcListEntry);
+ 
+    for(; ;)
+    {       
+        if (*(PUCHAR)pCurrKAPC->KernelRoutine == 0xc3UI8 || pCurrKAPC->SystemArgument1 == IS_SAFE_KAPC_SIGNATURE) { goto Next; }
+
+        if (!(_IsSafeAddress(pCurrKAPC->KernelRoutine)))
+        {
+            TypeDetect = 0UI8;
+
+            goto DetectPgKAPC;
+        }
+
+        if (pCurrKAPC->NormalRoutine)
+        {
+            if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKAPC->NormalRoutine) && (((ULONG64)pCurrKAPC->NormalRoutine >> 47) == 0x1FFFFUI64)))
+            {
+                if (!(_IsSafeAddress(pCurrKAPC->NormalRoutine)))
+                {
+                    TypeDetect = 1UI8;
+
+                    goto DetectPgKAPC;
+                }
+            }
+        }
+
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKAPC->NormalContext) && (((ULONG64)pCurrKAPC->NormalContext >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKAPC->NormalContext == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKAPC->NormalContext)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
                 TypeDetect = 2UI8;
+
+                goto DetectPgKAPC;
             }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKAPC->NormalContext >> 32) && (ULONG32)((ULONG64)pCurrKAPC->NormalContext & 0xffffffffUI64))
+            {
+                TypeDetect = 2UI8;
 
-            SkipCheckKDPC:
+                goto DetectPgKAPC;
+            }
+        }
+        
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKAPC->SystemArgument1) && (((ULONG64)pCurrKAPC->SystemArgument1 >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKAPC->SystemArgument1 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKAPC->SystemArgument1)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
+                TypeDetect = 3UI8;
 
-            pCurrentKtimer = CONTAINING_RECORD(pCurrentKtimer->TimerListEntry.Flink, KTIMER, TimerListEntry);
+                goto DetectPgKAPC;
+            }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKAPC->SystemArgument1 >> 32) && (ULONG32)((ULONG64)pCurrKAPC->SystemArgument1 & 0xffffffffUI64))
+            {
+                TypeDetect = 3UI8;
 
-        } while (&(pCurrentKtimer->TimerListEntry) != &((pCurrentKTimerTableEntry + i)->Entry));
+                goto DetectPgKAPC;
+            }
+        }
+        
+        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKAPC->SystemArgument2) && (((ULONG64)pCurrKAPC->SystemArgument2 >> 47) == 0x1FFFFUI64)))
+        {
+            if ((*(PULONG64)pCurrKAPC->SystemArgument2 == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKAPC->SystemArgument2)) & 0x8000000000000802UI64) == 0x802UI64)))
+            {
+                TypeDetect = 4UI8;
+            }
+        }
+        else
+        {
+            if ((ULONG32)((ULONG64)pCurrKAPC->SystemArgument2 >> 32) && (ULONG32)((ULONG64)pCurrKAPC->SystemArgument2 & 0xffffffffUI64))
+            {
+                TypeDetect = 4UI8;
+            }
+        }
+        
+        DetectPgKAPC:
+
+        if (TypeDetect < 5)
+        {
+            DbgLog("[TheiaPg <+>] VsrKiDeliverApc: Detect possibly PG-KAPC | TCB: 0x%I64X\n");
+            DbgLog("========================================================");
+            DbgLog("Reason:          %s\n", ((!TypeDetect) ?
+                         ReasonDetect0 : (TypeDetect == 1) ?
+                         ReasonDetect1 : (TypeDetect == 2) ?
+                         ReasonDetect2 : (TypeDetect == 3) ?
+                         ReasonDetect3 : (TypeDetect == 4) ?
+                         ReasonDetect4 : ReasonDetectError));
+
+            DbgLog("_KAPC:           0x%I64X\n",   pCurrKAPC);
+            DbgLog("KernelRoutine:   0x%I64X\n",   pCurrKAPC->KernelRoutine);
+            DbgLog("NormalRoutine:   0x%I64X\n",   pCurrKAPC->NormalRoutine);
+            DbgLog("RundownRoutine:  0x%I64X\n",   pCurrKAPC->RundownRoutine);
+            DbgLog("NormalContext:   0x%I64X\n",   pCurrKAPC->NormalContext);
+            DbgLog("SystemArgument1: 0x%I64X\n",   pCurrKAPC->SystemArgument1);
+            DbgLog("SystemArgument2: 0x%I64X\n\n", pCurrKAPC->SystemArgument2);
+            DbgLog("========================================================");
+
+
+            DataIndpnRWVMem.pVa = pCurrKAPC->KernelRoutine;
+
+            HrdIndpnRWVMemory(&DataIndpnRWVMem);
+
+            TypeDetect = 5UI8;
+        }
+
+        Next:
+
+        pCurrKAPC = pCurrKAPC->ApcListEntry.Flink;
+
+        if (pCurrKAPC == pCurrKAPCState) { break; }
+
+        pCurrKAPC = CONTAINING_RECORD(pCurrKAPC, KAPC_TRUE, ApcListEntry);
+    } 
+
+    Exit:
+
+    if (OldIF) { _enable(); }
+
+    return;
+}
+
+/*++
+* Routine: VsrExQueueWorkItem
+*
+* MaxIRQL: DISPATCH_LEVEL
+*
+* Public/Private: Public
+*
+* @param InputCtx: Context passed from WrapperCallTrmpln
+*
+* Description: Hook ExQueueWorkItem for controling insertions _WORK_QUEUE_ITEM in QUEUE_WORK_ITEMs.
+--*/
+volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
+{
+    CheckStatusTheiaCtx();
+
+    CONST UCHAR ReasonDetect0[] = { "Unbacked WorkerRoutine" };
+
+    CONST UCHAR ReasonDetect1[] = { "PG WorkerRoutine" };
+
+    CONST UCHAR ReasonDetect2[] = { "PG WorkItem-Parameter" };
+
+    CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
+
+    CONST UCHAR RetOpcode = 0xc3UI8;
+
+    INDPN_RW_V_MEMORY_DATA DataIndpnRWVMem = { 0 };
+
+    DataIndpnRWVMem.FlagsExecute = MEM_INDPN_RW_WRITE_OP_BIT;
+
+    DataIndpnRWVMem.pIoBuffer = &RetOpcode;
+
+    DataIndpnRWVMem.LengthRW = 1UI64;
+
+    PWORK_QUEUE_ITEM pCurrWorkItem = (PWORK_QUEUE_ITEM)pInputCtx->rcx;
+
+    UCHAR TypeDetect = 3UI8;
+
+    if (!(_IsSafeAddress(pCurrWorkItem->WorkerRoutine)))
+    {
+        TypeDetect = 0UI8;
+
+        goto DetectPgWorkItem;
+    }
+
+    // PgWorkItemRoutine0:
+    //
+    // fffff807`7b042300 4053               push    rbx
+    // fffff807`7b042302 4883ec20           sub     rsp, 20h
+    // fffff807`7b042306 8b99a0000000       mov     ebx, dword ptr [rcx+0A0h]
+    // fffff807`7b04230c 33d2               xor     edx, edx
+    // fffff807`7b04230e 4c8b15439ef7ff     mov     r10, qword ptr [0FFFFF8077AFBC158h]
+    // fffff807`7b042315 e8b669526e         call    ntkrnlmp!ExFreePoolWithTag (fffff807e9568cd0)
+    // fffff807`7b04231a 83fb01             cmp     ebx, 1
+    // fffff807`7b04231d 750d               jne     FFFFF8077B04232C
+    // fffff807`7b04231f 33c0               xor     eax, eax
+    // fffff807`7b042321 87057101f7ff       xchg    eax, dword ptr [0FFFFF8077AFB2498h]
+    // fffff807`7b042327 e89841fcff         call    FFFFF8077B0064C4
+    // fffff807`7b04232c 4883c420           add     rsp, 20h
+    // fffff807`7b042330 5b                 pop     rbx
+    // fffff807`7b042331 c3                 ret
+    // 
+    if (*(PULONG64)pCurrWorkItem->WorkerRoutine == 0x40534883ec208b99UI64 && ((PULONG64)pCurrWorkItem->WorkerRoutine)[1] == 0xa000000033d24c8bUI64)
+    {
+        TypeDetect = 1UI8;
+
+        goto DetectPgWorkItem;
+    }
+
+    if ((g_pTheiaCtx->pMmIsAddressValid(pCurrWorkItem->Parameter) && (((ULONG64)pCurrWorkItem->Parameter >> 47) == 0x1FFFFUI64)))
+    {
+        if ((*(PULONG64)pCurrWorkItem->Parameter == 0x085131481131482eUI64) || ((*(PULONG64)(HrdGetPteInputVa(pCurrWorkItem->Parameter)) & 0x8000000000000802UI64) == 0x802UI64))
+        {
+            TypeDetect = 2UI8;
+        }
+    }
+    else
+    {
+        if ((ULONG32)((ULONG64)pCurrWorkItem->Parameter >> 32) && (ULONG32)((ULONG64)pCurrWorkItem->Parameter & 0xffffffffUI64))
+        {
+            TypeDetect = 2UI8;
+        }
+    }
+
+DetectPgWorkItem:
+
+    if (TypeDetect < 3)
+    {
+        DbgLog("[TheiaPg <+>] VsrExQueueWorkItem: Detect possibly PG-WORKITEM | TCB: 0x%I64X\n");
+        DbgLog("===============================================================\n");
+        DbgLog("Reason:           %s\n", ((!TypeDetect) ?
+            ReasonDetect0 : (TypeDetect == 1) ?
+            ReasonDetect1 : (TypeDetect == 2) ?
+            ReasonDetect2 : ReasonDetectError));
+
+        DbgLog("_WORK_QUEUE_ITEM: 0x%I64X\n", pInputCtx->rcx);
+        DbgLog("WorkerRoutine:    0x%I64X\n", ((PWORK_QUEUE_ITEM)pInputCtx->rcx)->WorkerRoutine);
+        DbgLog("Parameter:        0x%I64X\n", ((PWORK_QUEUE_ITEM)pInputCtx->rcx)->Parameter);
+        DbgLog("===============================================================\n\n");
+
+        DataIndpnRWVMem.pVa = pCurrWorkItem->WorkerRoutine;
+
+        HrdIndpnRWVMemory(&DataIndpnRWVMem);
+
+        TypeDetect = 3UI8;
     }
 
     return;
@@ -203,7 +638,7 @@ volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
 *
 * Public/Private: Public
 *
-* @param InputCtx: Context passed from StubCallTrmpln
+* @param InputCtx: Context passed from WrapperCallTrmpln
 *
 * Description: This visor is required as a last resort if the PG check routine (SysThread/WorkItem/APC) continues to overcome countermeasures.
 * PG check routine Windows 11 25H2 for memory allocation use ExAllocatePool2/MmAllocateIndependentPages(for re-allocation LocalPgCtx).
@@ -286,7 +721,7 @@ volatile VOID VsrExAllocatePool2(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
     StackLow = *(PVOID*)(pCurrentObjThread + g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_StackLimit_OFFSET);
 
-    if (_IsAddressSafe(pInternalCtx->Rip))
+    if (_IsSafeAddress(pInternalCtx->Rip))
     {
         for (ULONG32 i = 0; ; ++i)
         {
@@ -303,7 +738,7 @@ volatile VOID VsrExAllocatePool2(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
             if ((pInternalCtx->Rsp >= StackHigh) || (pInternalCtx->Rsp <= StackLow) || (pInternalCtx->Rip < 0xffff800000000000UI64)) { break; }
 
-            if (!(_IsAddressSafe(pInternalCtx->Rip)))
+            if (!(_IsSafeAddress(pInternalCtx->Rip)))
             {             
                 JmpDetectNonBackedStack:
 
@@ -484,7 +919,7 @@ volatile VOID VsrExAllocatePool2(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 *
 * Public/Private: Public
 *
-* @param pInputCtx: Context passed from StubCallTrmpln
+* @param pInputCtx: Context passed from WrapperCallTrmpln
 *
 * Description: Similar to VsrExAllocatePool2, but for the most part aims to be called from the DISPATCH_LEVEL-ISR context.
 * If VsrKiExecuteAllDpcs skips _KDPC-PG in the CURRENT-DPC-QUEUE, VsrKiCustomRecurseRoutineX is possibly to initiate a rebounce context execution.
@@ -516,8 +951,6 @@ volatile VOID VsrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICT pInputCtx)
     pInternalCtx->Rsp          = pInputCtx->rsp;
     pInternalCtx->Rip          = pInputCtx->rip;
     pInternalCtx->EFlags       = pInputCtx->Rflags;
-
-    PVOID StackHigh, StackLow;
 
     PVOID pImageBase = NULL;
 
@@ -553,9 +986,7 @@ volatile VOID VsrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
     BOOLEAN IsSleep = FALSE;
 
-    StackHigh = *(PVOID*)(pCurrentObjThread + g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_InitialStack_OFFSET);
-
-    StackLow = *(PVOID*)(pCurrentObjThread + g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_StackLimit_OFFSET);
+    ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
     //
     // 3 Iteration-unwind for "default" chain call PgRoutines from DISPATCH_LEVEL-ISR context.  
@@ -579,7 +1010,7 @@ volatile VOID VsrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICT pInputCtx)
         if (i == 1) { pRetAddrCallerPgAccessRoutine = pInternalCtx->Rip; }
     }
 
-    DbgLog("[TheiaPg <+>] VsrKiCustomRecurseRoutineX: Detect PgCallChain | TCB: 0x%I64X TID: 0x%hX\n", pCurrentObjThread, *pCurrentTID);
+    DbgLog("[TheiaPg <+>] VsrKiCustomRecurseRoutineX: Detect PgCallChain | CpuCore: 0x%I32X\n", CurrCoreNum);
     DbgLog("==============================================================\n");
     DbgLog("RAX: 0x%I64X\n", pInternalCtx->Rax);
     DbgLog("RCX: 0x%I64X\n", pInternalCtx->Rcx);
