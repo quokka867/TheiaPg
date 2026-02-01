@@ -371,7 +371,6 @@ volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
             DbgLog("SystemArgument2: 0x%I64X\n\n", pCurrKAPC->SystemArgument2);
             DbgLog("========================================================\n\n");
 
-
             DataIndpnRWVMem.pVa = pCurrKAPC->KernelRoutine;
 
             HrdIndpnRWVMemory(&DataIndpnRWVMem);
@@ -410,9 +409,7 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
 
     CONST UCHAR ReasonDetect0[] = { "Unbacked WorkerRoutine" };
 
-    CONST UCHAR ReasonDetect1[] = { "PG WorkerRoutine" };
-
-    CONST UCHAR ReasonDetect2[] = { "PG WorkItem-Parameter" };
+    CONST UCHAR ReasonDetect1[] = { "PG Parameter" };
 
     CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
 
@@ -426,7 +423,7 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
 
     DataIndpnRWVMem.LengthRW = 1UI64;
 
-    UCHAR TypeDetect = 3UI8;
+    UCHAR TypeDetect = 2UI8;
 
     PWORK_QUEUE_ITEM pCurrWorkItem = (PWORK_QUEUE_ITEM)(pInputCtx->rcx);
 
@@ -438,36 +435,12 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
 
         goto DetectPgWorkItem;
     }
-
-    // PgWorkItemRoutine0:
-    //
-    // fffff807`7b042300 4053               push    rbx
-    // fffff807`7b042302 4883ec20           sub     rsp, 20h
-    // fffff807`7b042306 8b99a0000000       mov     ebx, dword ptr [rcx+0A0h]
-    // fffff807`7b04230c 33d2               xor     edx, edx
-    // fffff807`7b04230e 4c8b15439ef7ff     mov     r10, qword ptr [0FFFFF8077AFBC158h]
-    // fffff807`7b042315 e8b669526e         call    ntkrnlmp!ExFreePoolWithTag (fffff807e9568cd0)
-    // fffff807`7b04231a 83fb01             cmp     ebx, 1
-    // fffff807`7b04231d 750d               jne     FFFFF8077B04232C
-    // fffff807`7b04231f 33c0               xor     eax, eax
-    // fffff807`7b042321 87057101f7ff       xchg    eax, dword ptr [0FFFFF8077AFB2498h]
-    // fffff807`7b042327 e89841fcff         call    FFFFF8077B0064C4
-    // fffff807`7b04232c 4883c420           add     rsp, 20h
-    // fffff807`7b042330 5b                 pop     rbx
-    // fffff807`7b042331 c3                 ret
-    // 
-    if (*(PULONG64)pCurrWorkItem->WorkerRoutine == 0x40534883ec208b99UI64 && ((PULONG64)pCurrWorkItem->WorkerRoutine)[1] == 0xa000000033d24c8bUI64)
-    {
-        TypeDetect = 1UI8;
-
-        goto DetectPgWorkItem;
-    }
-
+ 
     if ((g_pTheiaCtx->pMmIsAddressValid(pCurrWorkItem->Parameter) && (((ULONG64)pCurrWorkItem->Parameter >> 47) == 0x1ffffUI64)))
     {
         if ((*(PULONG64)pCurrWorkItem->Parameter == 0x085131481131482eUI64) || ((*(PULONG64)(HrdGetPteInputVa(pCurrWorkItem->Parameter)) & 0x8000000000000802UI64) == 0x802UI64))
         {
-            TypeDetect = 2UI8;
+            TypeDetect = 1UI8;
         }
     }
     else
@@ -482,7 +455,7 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
                 {
                     if (j > 4)
                     {
-                        TypeDetect = 2UI8;
+                        TypeDetect = 1UI8;
                     }
 
                     break;
@@ -493,15 +466,13 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
 
     DetectPgWorkItem:
 
-    if (TypeDetect < 3)
+    if (TypeDetect < 2)
     {
         DbgLog("[TheiaPg <+>] VsrExQueueWorkItem: Detect possibly PG-WORKITEM | TCB: 0x%I64X\n");
         DbgLog("===============================================================\n");
         DbgLog("Reason:           %s\n", ((!TypeDetect) ?
                       ReasonDetect0 : (TypeDetect == 1) ?
-                      ReasonDetect1 : (TypeDetect == 2) ?
-                      ReasonDetect2 : ReasonDetectError));
-
+                      ReasonDetect1 : ReasonDetectError));
         DbgLog("_WORK_QUEUE_ITEM: 0x%I64X\n", pInputCtx->rcx);
         DbgLog("WorkerRoutine:    0x%I64X\n", ((PWORK_QUEUE_ITEM)pInputCtx->rcx)->WorkerRoutine);
         DbgLog("Parameter:        0x%I64X\n", ((PWORK_QUEUE_ITEM)pInputCtx->rcx)->Parameter);
@@ -511,7 +482,7 @@ volatile VOID VsrExQueueWorkItem(IN PINPUTCONTEXT_ICT pInputCtx)
 
         HrdIndpnRWVMemory(&DataIndpnRWVMem);
 
-        TypeDetect = 3UI8;
+        TypeDetect = 2UI8;
     }
 
     SkipCheckWorkItem:
