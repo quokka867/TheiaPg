@@ -307,8 +307,6 @@ volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
 
     CONST UCHAR ReasonDetect1[] = { "Unbacked NormalRoutine" };
 
-    CONST UCHAR ReasonDetect2[] = { "PG NormalContext" };
-
     CONST UCHAR ReasonDetectError[] = { "UNKNOWN" };
 
     CONST UCHAR RetOpcode = 0xc3UI8;
@@ -321,7 +319,7 @@ volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
 
     DataIndpnRWVMem.LengthRW = 1UI64;
 
-    UCHAR TypeDetect = 3UI8;
+    UCHAR TypeDetect = 2UI8;
 
     PVOID pCurrObjThread = (PVOID)__readgsqword(0x188UI32);
 
@@ -351,51 +349,19 @@ volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
                 if (!(_IsSafeAddress(pCurrKAPC->NormalRoutine)))
                 {
                     TypeDetect = 1UI8;
-
-                    goto DetectPgKAPC;
                 }
             }
         }
-
-        if ((g_pTheiaCtx->pMmIsAddressValid(pCurrKAPC->NormalContext) && (((ULONG64)pCurrKAPC->NormalContext >> 47) == 0x1ffffUI64)))
-        {
-            if ((*(PULONG64)pCurrKAPC->NormalContext == 0x085131481131482eUI64 || ((*(PULONG64)(HrdGetPteInputVa(pCurrKAPC->NormalContext)) & 0x8000000000000802UI64) == 0x802UI64)))
-            {
-                TypeDetect = 2UI8;
-            }
-        }
-        else
-        {
-            if (((ULONG32)(pCurrKAPC->NormalContext) & 0xffffffffUI32) > 0xffffUI32)
-            {
-                for (UCHAR i = 0UI8, j = 0UI8; ; ++i)
-                {
-                    if (((ULONG64)(pCurrKAPC->NormalContext) >> i) & 0x01UI64) { ++j; }
-
-                    if (i == 63)
-                    {
-                        if (j > 4)
-                        {
-                            TypeDetect = 2UI8;
-                        }
-
-                        break;
-                    }
-                }
-            }
-        }
-             
+        
         DetectPgKAPC:
 
-        if (TypeDetect < 3)
+        if (TypeDetect < 2)
         {
             DbgLog("[TheiaPg <+>] VsrKiDeliverApc: Detect possibly PG-KAPC | TCB: 0x%I64X\n");
             DbgLog("========================================================\n");
             DbgLog("Reason:          %s\n", ((!TypeDetect) ?
                          ReasonDetect0 : (TypeDetect == 1) ?
-                         ReasonDetect1 : (TypeDetect == 2) ?
-                         ReasonDetect2 : ReasonDetectError));
-
+                         ReasonDetect1 : ReasonDetectError));
             DbgLog("_KAPC:           0x%I64X\n",   pCurrKAPC);
             DbgLog("KernelRoutine:   0x%I64X\n",   pCurrKAPC->KernelRoutine);
             DbgLog("NormalRoutine:   0x%I64X\n",   pCurrKAPC->NormalRoutine);
@@ -410,7 +376,7 @@ volatile VOID VsrKiDeliverApc(IN PINPUTCONTEXT_ICT pInputCtx)
 
             HrdIndpnRWVMemory(&DataIndpnRWVMem);
 
-            TypeDetect = 3UI8;
+            TypeDetect = 2UI8;
         }
 
         SkipCheckKAPC:
