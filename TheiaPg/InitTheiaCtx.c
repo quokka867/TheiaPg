@@ -262,6 +262,8 @@ VOID InitTheiaContext(VOID)
     };                                                                                                                                                                         //
     CONST UCHAR INIT_THEIA_KEBALANCESETMANANGER_MASK[sizeof INIT_THEIA_KEBALANCESETMANANGER_SUBSIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xxx????xxx????xxxxxxxxxx???" }; //
                                                                                                                                                                                //
+    LONG32 SaveRel32Offset = 0I32;                                                                                                                                             //
+                                                                                                                                                                               //
     // ========================================================================================================================================================================++
                                                                                                                                                  
     // RelatedData =====================++                                                                                                       
@@ -275,8 +277,6 @@ VOID InitTheiaContext(VOID)
     UCHAR IDTR[10];                                 //                                                                                                                                                                                                                                    
     PKIDTENTRY64 pSwKIDTENTRY64 = NULL;             //                                                                                           
     PVOID pKiSwInterruptDispatch = NULL;            //  
-                                                    //
-    LONG32 SaveRel32Offset = 0I32;                  //
                                                     //         
     // =============================================++
     

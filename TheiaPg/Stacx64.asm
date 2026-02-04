@@ -11,7 +11,6 @@ ret
 
 HrdStacx64 ENDP
 
-
 _TEXT ENDS
 
 END

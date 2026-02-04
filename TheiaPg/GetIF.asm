@@ -6,13 +6,11 @@ HrdGetIF PROC
 
 pushfq
 
-pop rcx
+pop rax
 
-shr rcx,9
+shr eax,9
 
-and cl,1
-
-movzx eax,cl
+and al,1
 
 ret
 

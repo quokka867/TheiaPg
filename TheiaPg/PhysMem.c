@@ -39,7 +39,7 @@ VOID HrdIndpnRWVMemory(IN OUT PINDPN_RW_V_MEMORY_DATA pInputData)
 	PVOID pMetaVPage = NULL;
 	PMMPTE_HARDWARE pMetaVPagePte = NULL;
 	ULONG64 SizeMetaVPage = 0UI64;
-	ULONG64 FilteredConstsAfterCompute[6] = { 0 }; ///< [0/1/2]: MmBase/Offset/Mask | [3]: Alligment | [4/5]: Mask/Mask
+	ULONG64 FilteredConstsAfterCompute[6] = { 0 }; ///< [0/1/2]: MmBase???/Offset/Mask | [3]: Alignment | [4/5]: Mask/Mask
 	
 	//
 	// For bypassing MiShowBadMapper - Windows 11 25H2
