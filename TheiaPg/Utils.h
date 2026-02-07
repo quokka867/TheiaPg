@@ -16,7 +16,7 @@
 
 // _SearchPatternInImg OptionalData[4] =======++
                                               //
-#define SPII_INDEX_OPTIONAL_DATA_SCIA 0x00I8  // SPII: SearchPatternInImg | SCIA: SCAN_CALLER_INPUT_ADDRESS
+#define SPII_INDEX_OPTIONAL_DATA_SCIA  0x00I8 // SPII: SearchPatternInImg | SCIA: SCAN_CALLER_INPUT_ADDRESS
                                               //
 // ===========================================++
 
@@ -32,7 +32,7 @@
 
 // _SearchPatternInRegion OptionalData[4] ====++
                                               //
-#define SPIR_INDEX_OPTIONAL_DATA_SCIA 0x00I8  // SPIR: SearchPatternInRegion | SCIA: SCAN_CALLER_INPUT_ADDRESS
+#define SPIR_INDEX_OPTIONAL_DATA_SCIA  0x00I8 // SPIR: SearchPatternInRegion | SCIA: SCAN_CALLER_INPUT_ADDRESS
                                               //
 // ===========================================++
 

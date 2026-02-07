@@ -363,7 +363,7 @@ VOID InitSearchPgSysThread(VOID)
 
                 pKAPC->RundownRoutine = NULL;
 
-                pKAPC->NormalContext = *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)); ///< Save current state union CombinedApcDisable.
+                pKAPC->NormalContext = *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)); ///< Save current state Union-CombinedApcDisable.
 
                 *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)) = 0UI32; ///< CombinedApcDisable: OFF
 

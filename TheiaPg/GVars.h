@@ -5,6 +5,6 @@
 extern PTHEIA_CONTEXT g_pTheiaCtx;
 
 
-extern PVOID64 PsLoadedModuleList;
+extern ULONG64 PsLoadedModuleList;
 
 extern ULONG32 NtBuildNumber;

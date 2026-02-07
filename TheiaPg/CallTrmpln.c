@@ -34,8 +34,7 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
     CONST UCHAR SaveContext[] =
     {
       0x9c,                                             // pushfq
-      0x65,0x48,0x8b,0x04,0x25,0x88,0x01,0x00,0x00,     // mov    rax, QWORD PTR gs:[188h]  | KeEnterGuardedRegion
-      0x66,0xff,0x88,0xe6,0x01,0x00,0x00,               // dec    WORD PTR[rax + 1E6h]      | ====================
+      0xfa,                                             // cli
       0x54,                                             // push   rsp
       0x48, 0x83, 0x04, 0x24, 0x18,                     // add    QWORD PTR[rsp],018h     
       0x48, 0x83, 0xec, 0x08,                           // sub    rsp,08h
@@ -78,21 +77,16 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
       0x5d,                                             // pop    rbp
       0x48, 0x83, 0xc4, 0x10,                           // add    rsp,010h
       0x9d,                                             // popfq
-      0x65, 0x48,0x8b,0x04,0x25,0x88,0x01,0x00,0x00,    // mov    rax, QWORD PTR gs:[188h]  | KeLeaveGuardedRegion 
-      0x66, 0x83,0x80,0xe6,0x01,0x00,0x00,0x01,         // add    WORD PTR[rax + 1E6h], 1   | ====================
       0x48, 0x8B, 0x44, 0x24, 0x08,                     // mov    rax, QWORD PTR [rsp+08h]
-      0x50                                              // push   rax
     };
 
     CONST UCHAR RestoreContext2[] =
     {
-      0x58,                                             // pop rax
-      0x48, 0x83, 0xec, 0x08,                           // sub    rsp,08h
-      0x48, 0x89, 0x04, 0x24,                           // mov    QWORD PTR[rsp],rax
+      0x50,                                             // push   rax                     
       0x48, 0x8b, 0x44, 0x24, 0x08,                     // mov    rax,QWORD PTR[rsp + 08h]
-      0x48, 0x89, 0x44, 0x24, 0x10,                     // mov    QWORD PTR[rsp + 010h],rax
-      0x48, 0x8b, 0x04, 0x24,                           // mov    rax,QWORD PTR[rsp]
-      0x48, 0x83, 0xc4, 0x10,                           // add    rsp,010h
+      0x48, 0x89, 0x44, 0x24, 0x10,                     // mov    QWORD PTR[rsp + 10h],rax
+      0x58,                                             // pop    rax
+      0x48, 0x83, 0xc4, 0x08,                           // add    rsp,08h
       0xc3                                              // ret
     };
 

@@ -533,7 +533,11 @@ volatile VOID VsrExAllocatePool2(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
     if (pInputCtx->rax)
     {
+        if (!(OldIF = HrdGetIF())) { _enable(); }
+
         *(PUCHAR)pInputCtx->rax &= 0x00UI8; ///< Fix DemandZero (Only PT-PTEs)
+
+        if (!OldIF) { _disable(); }
 
         if ((*(PULONG64)(HrdGetPteInputVa((PVOID)pInputCtx->rax)) & 0x8000000000000801I64) == 0x801UI64) ///< Checking RWX PTE-Attributes.
         {
@@ -757,7 +761,6 @@ volatile VOID VsrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICT pInputCtx)
     CONST LONG64 Timeout = (-10000UI64 * 31536000000UI64); ///< 1 year.
     LONG32 SaveRel32Offset = 0I32;
     CONST UCHAR RetOpcode = 0xc3UI8;
-    BOOLEAN OldIF = FALSE;
     UCHAR CurrIrql = (UCHAR)__readcr8();
     ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 

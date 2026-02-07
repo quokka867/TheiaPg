@@ -203,68 +203,67 @@ VOID InitTheiaContext(VOID)
     #define ERROR_INIT_THEIA_CONTEXT 0x4a9d62b5UI32
     #define ERROR_DOUBLE_INIT_THEIA_CONTEXT 0x62c7bf9fUI32
 
-    // OtherData ==============================================================================================================================================================++
-                                                                                                                                                                               //
-    CONST UCHAR StopSig[4] = { 0xcc,0xcc,0xcc,0xcc };                                                                                                                          //
-                                                                                                                                                                               //
-    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG[] = { 0x48, 0xb8, 0x77, 0x72, 0xdd, 0xf3, 0xc7, 0xc6, 0x35, 0x7e }; ///< For gKiWaitAlways/gKiWaitNever.                //
-    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK[sizeof INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG] = { "xxxxxxxxxx" };                                                 // 
-                                                                                                                                                                               //
-    CONST UCHAR PgXorRoutineSig[52] = ///< The byte pattern of the top of PgCtx is needed for routines of PgCtx interceptors.                                                  //
-    {                                                                                                                                                                          //
-     0x2e, 0x48, 0x31, 0x11,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x08,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x10,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x18,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x20,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x28,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x30,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x38,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x40,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x48,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x50,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x58,                                                                                                                                                   //
-     0x48, 0x31, 0x51, 0x60                                                                                                                                                    //
-    };                                                                                                                                                                         //
-                                                                                                                                                                               //
-    PVOID(__stdcall*pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);                                                                                      //
-                                                                                                                                                                               //
-    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_SUBSIG[] = ///< For gKiBalanceSetManagerPeriodicDpc.                                                                               //
-    {                                                                                                                                                                          //
-      0x65, 0x48, 0x8B, 0x0C, 0x25,                                                                                                                                            //
-      0x20, 0x00, 0x00, 0x00, 0x4C,                                                                                                                                            //
-      0x8B, 0x81, 0xB8, 0x8E, 0x00,                                                                                                                                            //
-      0x00, 0x4D, 0x85, 0xC0, 0x0F,                                                                                                                                            //
-      0x85, 0x00, 0x00, 0x00, 0x00,                                                                                                                                            //
-      0xFB, 0xE9, 0x00, 0x00, 0x00,                                                                                                                                            //
-      0x00, 0x0F, 0xB6, 0xD0, 0x40,                                                                                                                                            //
-      0x0F, 0xB6, 0xCF, 0xE8, 0x00,                                                                                                                                            //
-      0x00, 0x00, 0x00, 0xE9, 0x00,                                                                                                                                            //
-      0x00, 0x00, 0x00, 0x00, 0x00                                                                                                                                             //
-    };                                                                                                                                                                         //
-    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_MASK[sizeof INIT_THEIA_CTX_KIUPDATETIME_SUBSIG] = { "xxxxxxxxxxxxxxxxxxxxx????xx????xxxxxxxx????x??????" };                        //
-                                                                                                                                                                               //
-    CONST UCHAR INIT_THEIA_KEBALANCESETMANANGER_SUBSIG[] = ///< For gKiBalanceSetManagerPeriodicEvent.                                                                         //
-    {                                                                                                                                                                          //
-      0x48, 0x89, 0x5c, 0x24, 0x08,                                                                                                                                            //
-      0x48, 0x89, 0x6c, 0x24, 0x18,                                                                                                                                            //
-      0x57, 0x41, 0x54, 0x41, 0x57,                                                                                                                                            //
-      0x48, 0x83, 0xec, 0x50, 0x65,                                                                                                                                            //
-      0x48, 0x8b, 0x0c, 0x25, 0x88,                                                                                                                                            //
-      0x01, 0x00, 0x00, 0xbA, 0x11,                                                                                                                                            //
-      0x00, 0x00, 0x00, 0xe8, 0x00,                                                                                                                                            //
-      0x00, 0x00, 0x00, 0x48, 0x8B,                                                                                                                                            //
-      0x05, 0x00, 0x00, 0x00, 0x00,                                                                                                                                            //
-      0x4c, 0x8d, 0x3d, 0x00, 0x00,                                                                                                                                            //
-      0x00, 0x00, 0xb9, 0x80, 0xd1,                                                                                                                                            //
-      0xf0, 0x08, 0xbb, 0x08, 0x00,                                                                                                                                            //
-      0x00, 0x00, 0x00, 0x00, 0x00                                                                                                                                             //
-    };                                                                                                                                                                         //
-    CONST UCHAR INIT_THEIA_KEBALANCESETMANANGER_MASK[sizeof INIT_THEIA_KEBALANCESETMANANGER_SUBSIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xxx????xxx????xxxxxxxxxx???" }; //
-                                                                                                                                                                               //
-    LONG32 SaveRel32Offset = 0I32;                                                                                                                                             //
-                                                                                                                                                                               //
-    // ========================================================================================================================================================================++
+    // OtherData =============================================================================================================================================++
+                                                                                                                                                              //
+    CONST UCHAR StopSig[4] = { 0xcc,0xcc,0xcc,0xcc };                                                                                                         //
+                                                                                                                                                              //
+    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG[] = { 0x48, 0xb8, 0x77, 0x72, 0xdd, 0xf3, 0xc7, 0xc6, 0x35, 0x7e }; ///< For KiWaitAlways/KiWaitNever. //
+    CONST UCHAR INIT_THEIA_CTX_KIEXECUTEALLDPCS_SUBSIG_MASK[] = { "xxxxxxxxxx" };                                                                             // 
+                                                                                                                                                              //
+    CONST UCHAR PgXorRoutineSig[52] = ///< The byte pattern of the top of PgCtx is needed for routines of PgCtx interceptors.                                 //
+    {                                                                                                                                                         //
+      0x2e, 0x48, 0x31, 0x11,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x08,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x10,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x18,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x20,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x28,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x30,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x38,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x40,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x48,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x50,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x58,                                                                                                                                 //
+      0x48, 0x31, 0x51, 0x60                                                                                                                                  //
+    };                                                                                                                                                        //
+                                                                                                                                                              //
+    PVOID(__stdcall*pExAllocatePool2)(POOL_FLAGS Flags, SIZE_T NumberOfBytes, ULONG Tag);                                                                     //
+                                                                                                                                                              //
+    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_SUBSIG[] = ///< For KiBalanceSetManagerPeriodicDpc.                                                               //
+    {                                                                                                                                                         //
+      0x65, 0x48, 0x8B, 0x0C, 0x25,                                                                                                                           //
+      0x20, 0x00, 0x00, 0x00, 0x4C,                                                                                                                           //
+      0x8B, 0x81, 0xB8, 0x8E, 0x00,                                                                                                                           //
+      0x00, 0x4D, 0x85, 0xC0, 0x0F,                                                                                                                           //
+      0x85, 0x00, 0x00, 0x00, 0x00,                                                                                                                           //
+      0xFB, 0xE9, 0x00, 0x00, 0x00,                                                                                                                           //
+      0x00, 0x0F, 0xB6, 0xD0, 0x40,                                                                                                                           //
+      0x0F, 0xB6, 0xCF, 0xE8, 0x00,                                                                                                                           //
+      0x00, 0x00, 0x00, 0xE9, 0x00,                                                                                                                           //
+      0x00, 0x00, 0x00, 0x00, 0x00                                                                                                                            //
+    };                                                                                                                                                        //
+    CONST UCHAR INIT_THEIA_CTX_KIUPDATETIME_MASK[] = { "xxxxxxxxxxxxxxxxxxxxx????xx????xxxxxxxx????x??????" };                                                //
+                                                                                                                                                              //
+    CONST UCHAR INIT_THEIA_KEBALANCESETMANANGER_SUBSIG[] = ///< For KiBalanceSetManagerPeriodicEvent.                                                         //
+    {                                                                                                                                                         //
+      0x48, 0x89, 0x5C, 0x24, 0x08,                                                                                                                           //
+      0x48, 0x89, 0x6C, 0x24, 0x18,                                                                                                                           //
+      0x57, 0x41, 0x54, 0x41, 0x57,                                                                                                                           //
+      0x48, 0x83, 0xEC, 0x50, 0x65,                                                                                                                           //
+      0x48, 0x8B, 0x0C, 0x25, 0x88,                                                                                                                           //
+      0x01, 0x00, 0x00, 0xBA, 0x11,                                                                                                                           //
+      0x00, 0x00, 0x00, 0xE8, 0xDA,                                                                                                                           //
+      0xE3, 0xE2, 0xFF, 0x48, 0x8B,                                                                                                                           //
+      0x05, 0x6B, 0x1D, 0xA0, 0x00,                                                                                                                           //
+      0x4C, 0x8D, 0x3D, 0x8C, 0x36,                                                                                                                           //
+      0xA0, 0x00, 0xB9, 0x80, 0xD1,                                                                                                                           //
+      0xF0, 0x08, 0x00, 0x00, 0x00                                                                                                                            //
+    };                                                                                                                                                        //
+    CONST UCHAR INIT_THEIA_KEBALANCESETMANANGER_MASK[] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx????xxx????xxx????xxxxx???" };                                  //
+                                                                                                                                                              //
+    LONG32 SaveRel32Offset = 0I32;                                                                                                                            //
+                                                                                                                                                              //
+    // =======================================================================================================================================================++
                                                                                                                                                  
     // RelatedData =====================++                                                                                                       
                                         //                                                                                                       
@@ -458,11 +457,11 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                             //
     CONST UCHAR INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG[] =                                                                                                    //
     {                                                                                                                                                                       //
-     0x48, 0x89, 0x83, 0x80, 0x00, 0x00, 0x00,                   // mov     qword ptr[rbx + 80h], rax                                                                       //
-     0xc7, 0x83, 0x70, 0x20, 0x00, 0x00, 0x80, 0x20, 0x00, 0x00, // mov     dword ptr[rbx + 2070h], 2080h                                                                   //
-     0xc7, 0x83, 0x74, 0x20, 0x00, 0x00, 0xa0, 0x03, 0x00, 0x00  // mov     dword ptr[rbx + 2074h], 3A0h                                                                    //
+      0x48, 0x89, 0x83, 0x80, 0x00, 0x00, 0x00,                   // mov     qword ptr[rbx + 80h], rax                                                                      //
+      0xc7, 0x83, 0x70, 0x20, 0x00, 0x00, 0x80, 0x20, 0x00, 0x00, // mov     dword ptr[rbx + 2070h], 2080h                                                                  //
+      0xc7, 0x83, 0x74, 0x20, 0x00, 0x00, 0xa0, 0x03, 0x00, 0x00  // mov     dword ptr[rbx + 2074h], 3A0h                                                                   //
     };                                                                                                                                                                      //
-    CONST UCHAR INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG_MASK[sizeof INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxx" }; //
+    CONST UCHAR INIT_THEIA_CTX_KECAPTUREPERSISTENTTHREADSTATE_SUBSIG_MASK[] = { "xxxxxxxxxxxxxxxxxxxxxxxxxxx" };                                                            //
                                                                                                                                                                             //
     VOID(__fastcall* pKdCopyDataBlock)(PKDDEBUGGER_DATA64 pKdDebuggerDataBlockDec);                                                                                         //
     PKDDEBUGGER_DATA64 pKdDebuggerDataBlockDec = NULL;                                                                                                                      //
@@ -793,7 +792,7 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                                                                                                                     //
     pKdCopyDataBlock = (((ULONG64)((PUCHAR)pKeCapturePersistentThreadState + 32)) + ((SaveRel32Offset < 0I32) ? ((LONG64)SaveRel32Offset | 0xffffffff00000000UI64) : (LONG64)SaveRel32Offset));                                                                     //
                                                                                                                                                                                                                                                                     //
-    pKdDebuggerDataBlockDec = pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');                                                                                                   //
+    pKdDebuggerDataBlockDec = pExAllocatePool2(POOL_FLAG_NON_PAGED, (PAGE_SIZE * ((((0x1000 - 1) + sizeof(THEIA_CONTEXT)) & ~(0x1000 - 1)) / PAGE_SIZE)), 'UTR$');                                                                                                  //
                                                                                                                                                                                                                                                                     //
     if (!pKdDebuggerDataBlockDec)                                                                                                                                                                                                                                   //
     {                                                                                                                                                                                                                                                               // 

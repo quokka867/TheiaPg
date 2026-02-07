@@ -567,7 +567,6 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_DATA],
 
     ULONG64 LengthSig = 0UI64;
 
-    BOOLEAN StopFlag = TRUE;
     BOOLEAN StopHit = FALSE;
 
     PVOID pResultVa = NULL;
@@ -655,23 +654,28 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_DATA],
 
     for(; ; ++pRegionSearch)
     {
-        for (ULONG32 i = 0UI32; i < LenStopSig; ++i) { if (pStopSig[i] != pRegionSearch[i]) { StopFlag = FALSE; break; } }
+        for (ULONG32 i = 0UI32; ; ++i) 
+        { 
+            if (pStopSig[i] != pRegionSearch[i])
+            {
+                break; 
+            }
 
-        pResultVa = NULL;
+            if (i == (LenStopSig - 1))
+            {
+                StopHit = TRUE;
+            }      
+        }
 
-        if (!StopFlag) { StopFlag = TRUE; }
-        else { StopHit = TRUE; break; }
+        if (StopHit) { break; }
 
         if (FlagsExecute & SPIR_NO_OPTIONAL)
         {
             for (ULONG32 i = 0UI32; i < LengthSig; ++i)
             {
-                if (pMaskSig[i] == 'x')
+                if (pMaskSig[i] == 'x' && pRegionSearch[i] != pSig[i])
                 {
-                    if (pSig[i] != pRegionSearch[i])
-                    {
-                        goto Continue0;
-                    }
+                    goto Continue0;
                 }
             }
 
