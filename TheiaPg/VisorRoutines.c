@@ -184,7 +184,7 @@ volatile VOID VsrKiRetireDpcList(IN PINPUTCONTEXT_ICT pInputCtx)
             // 
             pCurrKDPC = (PKDPC)(*(g_pTheiaCtx->ppKiWaitAlways) ^ _byteswap_uint64((ULONG64)(pCurrKTIMER) ^ _rotl64(*(g_pTheiaCtx->ppKiWaitNever) ^ (ULONG64)(pCurrKTIMER->Dpc), (UCHAR) * (g_pTheiaCtx->ppKiWaitNever))));
 
-            if (!pCurrKDPC || !(g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC) || !(((ULONG64)pCurrKDPC >> 47) == 0x1ffffUI64))) { goto SkipCheckKTIMER; }
+            if (!pCurrKDPC || !(g_pTheiaCtx->pMmIsAddressValid(pCurrKDPC))) { goto SkipCheckKTIMER; }
         
             if (*(PUCHAR)(pCurrKDPC->DeferredRoutine) == 0xc3UI8) { goto SkipCheckKTIMER; }
 
@@ -530,7 +530,7 @@ volatile VOID VsrExQueueWorkItem(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
         if (((CurrIrql <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pInternalCtx->Rip) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pInternalCtx->Rip)))
         {
-           if (!((pInternalCtx->Rip >> 47) == 0x1ffffUI64) || !((*(PULONG64)(HrdGetPteInputVa((PVOID)pInternalCtx->Rip)) & 0x8000000000000000UI64) == 0x00UI64)) { goto Exit; }
+           if (((pInternalCtx->Rip >> 47) != 0x1ffffUI64) || ((*(PULONG64)(HrdGetPteInputVa((PVOID)pInternalCtx->Rip)) & 0x8000000000000000UI64) != 0x00UI64)) { goto Exit; }
 
            if ((((PUCHAR)pInternalCtx->Rip)[0] == 0xfaUI8 &&
                 ((PUCHAR)pInternalCtx->Rip)[1] == 0x54UI8 &&
@@ -797,7 +797,7 @@ volatile VOID VsrExAllocatePool2(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
         if (((CurrIrql <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pInternalCtx->Rip) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pInternalCtx->Rip)))
         {
-           if (!((pInternalCtx->Rip >> 47) == 0x1ffffUI64) || !((*(PULONG64)(HrdGetPteInputVa((PVOID)pInternalCtx->Rip)) & 0x8000000000000000UI64) == 0x00UI64)) { goto Exit; }
+           if (((pInternalCtx->Rip >> 47) != 0x1ffffUI64) || ((*(PULONG64)(HrdGetPteInputVa((PVOID)pInternalCtx->Rip)) & 0x8000000000000000UI64) != 0x00UI64)) { goto Exit; }
 
            if ((((PUCHAR)pInternalCtx->Rip)[0] == 0xfaUI8 &&
                 ((PUCHAR)pInternalCtx->Rip)[1] == 0x54UI8 &&
