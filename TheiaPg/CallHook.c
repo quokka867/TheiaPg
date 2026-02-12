@@ -1,7 +1,7 @@
 #include "LinkHeader.h"
 
 /*++
-* Routine: BuildStubCallTrmpln
+* Routine: BuildStubCallHook
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
@@ -10,9 +10,9 @@
 * @param RelatedDataICT: Pointer to PICT_DATA_RELATED
 *
 * Description: Important for kernel module mapping support,
-* without wrapper Stack-Unwind will not be able to correctly working without kernel routine access to the kernel module .pdata.
+* without stub Stack-Unwind will not be able to correctly working without kernel routine access to the kernel module .pdata.
 --*/
-static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
+static PVOID BuildStubCallHook(IN PICH_DATA pICH)
 {
     #define ERROR_BUILD_STUB_CALL_TRMPLN 0x8eabcf40I32
 
@@ -108,7 +108,7 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     if (CurrIrql > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] BuildStubCallTrmpln: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
+        DbgLog("[TheiaPg <->] BuildStubCallHook: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_CALL_TRMPLN);
     }
@@ -116,7 +116,7 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     if (!pPageStub)
     {
-        DbgLog("[TheiaPg <->] BuildStubCallTrmpln: Bad alloc page for PageStub\n");
+        DbgLog("[TheiaPg <->] BuildStubCallHook: Bad alloc page for PageStub\n");
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_CALL_TRMPLN);
     }
@@ -125,7 +125,7 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     HrdPatchAttributesInputPte(0x7FFFFFFFFFFFFFFFI64, 0I64, pPageStub);
 
-    *(PVOID*)((PUCHAR)&CoreStubCall + 24) = pRelatedDataICT->pHookRoutine;
+    *(PVOID*)((PUCHAR)&CoreStubCall + 24) = pICH->pHookRoutine;
 
     memset(pPageStub, 0, PAGE_SIZE);
 
@@ -135,15 +135,15 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall)), RestoreContext1, sizeof(RestoreContext1));
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1)), pRelatedDataICT->pHandlerHook, pRelatedDataICT->LengthHandler);
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1)), pICH->pHandlerHook, pICH->LengthHandler);
 
-    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1) + pRelatedDataICT->LengthHandler), RestoreContext2, sizeof(RestoreContext2));
+    memcpy((PUCHAR)pPageStub + (sizeof(SaveContext) + sizeof(CoreStubCall) + sizeof(RestoreContext1) + pICH->LengthHandler), RestoreContext2, sizeof(RestoreContext2));
 
     return pPageStub;
 }
 
 /*++
-* Routine: InitCallTrmplnIntrnl
+* Routine: InitCallHookIntrnl
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
@@ -153,7 +153,7 @@ static PVOID BuildStubCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 *
 * Description: The main ICT routine engaged in the installation of a CallTrampoline.
 --*/
-static VOID InitCallTrmplnIntrnl(IN OUT PICT_DATA_RELATED pRelatedDataICT)
+static VOID InitCallHookIntrnl(IN OUT PICH_DATA pICH)
 {
     #define ERROR_INIT_CALL_TRMPLN_INTRNL 0x6f21b8d4I32
 
@@ -182,20 +182,20 @@ static VOID InitCallTrmplnIntrnl(IN OUT PICT_DATA_RELATED pRelatedDataICT)
 
     INDPN_RW_V_MEMORY_DATA DataIndpnRWVMem = { 0 };
     DataIndpnRWVMem.FlagsExecute = MEM_INDPN_RW_WRITE_OP_BIT;
-    DataIndpnRWVMem.pVa = pRelatedDataICT->pBasePatch;
+    DataIndpnRWVMem.pVa = pICH->pBasePatch;
     DataIndpnRWVMem.pIoBuffer = &CallTrmpln;
-    DataIndpnRWVMem.LengthRW = (!pRelatedDataICT->LengthAlignment ? (sizeof(CallTrmpln) - 256) : ((sizeof(CallTrmpln) - 256) + pRelatedDataICT->LengthAlignment));
+    DataIndpnRWVMem.LengthRW = (!pICH->LengthAlignment ? (sizeof(CallTrmpln) - 256) : ((sizeof(CallTrmpln) - 256) + pICH->LengthAlignment));
 
     PVOID pPageStub = NULL;
 
     if (CurrIrql > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] InitCallTrmplnIntrnl: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
+        DbgLog("[TheiaPg <->] InitCallHookIntrnl: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
 
         DieDispatchIntrnlError(ERROR_INIT_CALL_TRMPLN_INTRNL);
     }
 
-    pPageStub = BuildStubCallTrmpln(pRelatedDataICT);
+    pPageStub = BuildStubCallHook(pICH);
 
     *(PVOID*)(CallTrmpln + 3) = pPageStub;
 
@@ -212,17 +212,17 @@ static VOID InitCallTrmplnIntrnl(IN OUT PICT_DATA_RELATED pRelatedDataICT)
 }
 
 /*++
-* Routine: InitCallTrmpln
+* Routine: InitCallHook
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
 * Public/Private: Public
 *
-* @param RelatedDataICT: Pointer to PICT_DATA_RELATED
+* @param RelatedDataICT: Pointer to ICH_DATA
 *
-* Description: Wrapper for InitCallTrmplnIntrnl.
+* Description: Wrapper for InitCallHookIntrnl.
 --*/
-VOID InitCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
+VOID InitCallHook(IN PICH_DATA pICH)
 {
     #define ERROR_INIT_CALL_TRMPLN 0x8319ebd9UI32
 
@@ -232,12 +232,12 @@ VOID InitCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT)
 
     if (CurrIrql > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] InitCallTrmpln: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
+        DbgLog("[TheiaPg <->] InitCallHook: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
 
         DieDispatchIntrnlError(ERROR_INIT_CALL_TRMPLN);
     }
 
-    InitCallTrmplnIntrnl(pRelatedDataICT);
+    InitCallHookIntrnl(pICH);
  
     return STATUS_SUCCESS;
 }

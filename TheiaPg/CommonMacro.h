@@ -45,13 +45,5 @@ do                                                    \
                                                       \
     __writecr8((ULONG64)CurrIrql);                    \
                                                       \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
-    __nop();                                          \
                                                       \
 } while (FALSE)

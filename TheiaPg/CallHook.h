@@ -2,7 +2,7 @@
 
 #include "LinkHeader.h"
 
-typedef struct _ICT_DATA_RELATED
+typedef struct _ICH_DATA
 {
     PVOID   pHookRoutine;
     PVOID   pBasePatch;
@@ -10,6 +10,6 @@ typedef struct _ICT_DATA_RELATED
     ULONG64 LengthHandler;
     UCHAR   LengthAlignment;
 
-}ICT_DATA_RELATED, * PICT_DATA_RELATED;
+}ICH_DATA, * PICH_DATA;
 
-extern VOID InitCallTrmpln(IN PICT_DATA_RELATED pRelatedDataICT);
+extern VOID InitCallHook(IN PICH_DATA pRelatedDataICT);

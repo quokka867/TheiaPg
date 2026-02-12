@@ -7,7 +7,7 @@
 *
 * Public/Private: Private
 *
-* @param Routine: Routine for building a trampoline stub
+* @param pRoutine: Routine for building a call stub
 * 
 * Description: Important for BYOVD support, 
 * without stub, unwind current stack will not be able to correctly working without access to the .pdata segment TheiaPg.sys in memory.
@@ -78,7 +78,7 @@ static PVOID BuildStubApcRoutine(IN PVOID pRoutine)
 
     if (CurrIrql > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] VsrBuilderStubApcRoutine: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
+        DbgLog("[TheiaPg <->] BuildStubApcRoutine: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_APC_ROUTINE);
     }
@@ -86,7 +86,7 @@ static PVOID BuildStubApcRoutine(IN PVOID pRoutine)
 
     if (!pPageStub)
     {
-        DbgLog("[TheiaPg <->] VsrBuilderStubApcRoutine: Bad alloc page for PageStub\n");
+        DbgLog("[TheiaPg <->] BuildStubApcRoutine: Bad alloc page for PageStub\n");
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_APC_ROUTINE);
     }
@@ -109,17 +109,17 @@ static PVOID BuildStubApcRoutine(IN PVOID pRoutine)
 }
 
 /*++
-* Routine: SearchPgSysThreadRoutine
+* Routine: SearchUnbackedCurrStackCall
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
 * Public/Private: Private
 *
-* @param InputCtx: Context passed from StubApcRoutine
+* @param pInputCtx: Context passed from StubApcRoutine
 *
 * Description: Required to intercept system threads that are executing code from an Unbacked-Region.
 --*/
-volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
+static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROUTINE pInputCtx)
 {
     CheckStatusTheiaCtx();
 
@@ -127,7 +127,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
     PCONTEXT pInternalCtx = (PCONTEXT)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
 
-    if (!pInternalCtx) { DbgLog("[TheiaPg <->] SearchPgSysThreadRoutine: Bad alloc page for InternalCtx\n"); return; }
+    if (!pInternalCtx) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Bad alloc page for InternalCtx\n"); return; }
 
     pInternalCtx->ContextFlags = CONTEXT_CONTROL;
     pInternalCtx->Rax          = pInputCtx->rax;
@@ -151,7 +151,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
     PULONG64 pRetAddrsTrace = (PULONG64)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
 
-    if (!pRetAddrsTrace) { DbgLog("[TheiaPg <->] SearchPgSysThreadRoutine: Bad alloc page for RetAddrsTrace\n"); return; }
+    if (!pRetAddrsTrace) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Bad alloc page for RetAddrsTrace\n"); return; }
 
     PUCHAR pCurrentObjThread = (PUCHAR)__readgsqword(0x188UI32);
     PUSHORT pCurrentTID = (PUSHORT)(pCurrentObjThread + (g_pTheiaCtx->TheiaMetaDataBlock.ETHREAD_Cid_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.CLIENT_ID_UniqueThread_OFFSET));
@@ -188,9 +188,9 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
         {
             pInternalCtx->Rip = *(PVOID*)pInternalCtx->Rsp;
 
-            pInternalCtx->Rsp += 8I64;
+            pInternalCtx->Rsp += 8UI64;
         }
-
+        
         g_pTheiaCtx->pRtlVirtualUnwind(0UI32, pImageBase, pInternalCtx->Rip, pRuntimeFunction, pInternalCtx, &pHandlerData, &EstablisherFrame, NULL);
 
         if ((pInternalCtx->Rsp >= StackHigh) || (pInternalCtx->Rsp <= StackLow) || (pInternalCtx->Rip < 0xffff800000000000UI64)) { goto Exit; }
@@ -199,8 +199,8 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
         if (!(_IsSafeAddress(pInternalCtx->Rip)))
         {
-            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect non-backed stack calls | TCB: 0x%I64X TID: 0x%hX\n", pCurrentObjThread, *pCurrentTID);
-
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect Unbacked-Stack-Call | TCB: 0x%I64X TID: 0x%hX\n", pCurrentObjThread, *pCurrentTID);
+           
             OtherDetects:
 
             DbgLog("=======================================================================\n");
@@ -236,9 +236,9 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
             ) // }
 
-            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Handling exit phase...\n\n");
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Handling exit phase...\n\n");
 
-            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect possibly PgCaller | pPgCtx: 0x%I64X\n\n", (pPgCtx = SearchPgCtxInCtx(pInternalCtx)));
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect possibly PgCaller | pPgCtx: 0x%I64X\n\n", (pPgCtx = SearchPgCtxInCtx(pInternalCtx)));
 
             if (pPgCtx)
             {
@@ -246,7 +246,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
                 {
                     if (!((HrdGetPteInputVa(pPgDpcRoutine))->NoExecute))
                     {
-                        DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect PgDpcRoutine in PgCtx | PgDpcRoutine: 0x%I64X\n\n", pPgDpcRoutine);
+                        DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect PgDpcRoutine in PgCtx | PgDpcRoutine: 0x%I64X\n\n", pPgDpcRoutine);
 
                         DataIndpnRWVMem.pVa = pPgDpcRoutine;
 
@@ -258,7 +258,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
                 {
                     if (!((HrdGetPteInputVa(pPgApcRoutine))->NoExecute))
                     {
-                        DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect PgApcRoutine in PgCtx | PgApcRoutine: 0x%I64X\n\n", pPgApcRoutine);
+                        DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect PgApcRoutine in PgCtx | PgApcRoutine: 0x%I64X\n\n", pPgApcRoutine);
 
                         DataIndpnRWVMem.pVa = pPgApcRoutine;
 
@@ -286,14 +286,14 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
                             else { ((PUCHAR)pSearchSdbpCheckDllRWX)[l] = 0x90UI8; }
                         }
 
-                        DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: SdbpCheckDllRWX is found: 0x%I64X\n\n", pSearchSdbpCheckDllRWX);
+                        DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: SdbpCheckDllRWX is found: 0x%I64X\n\n", pSearchSdbpCheckDllRWX);
 
                         break;
                     }
                 }
             }
 
-            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
 
             IsSleep = TRUE;
 
@@ -302,7 +302,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 
         if (pPgCtx = SearchPgCtxInCtx(pInternalCtx))
         {
-            DbgLog("[TheiaPg <+>] SearchPgSysThreadRoutine: Detect PgCtx in CpuCtx | TCB: 0x%I64X TID: 0x%hX\n", pCurrentObjThread, *pCurrentTID);
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect PgCtx in CpuCtx ### | TCB: 0x%I64X TID: 0x%hX\n", pCurrentObjThread, *pCurrentTID);
 
             goto OtherDetects;
         }
@@ -324,7 +324,7 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 }
 
 /*++
-* Routine: InitSearchPgSysThread
+* Routine: InitSearchPgSysThreads
 *
 * MaxIRQL: DISPATCH_LEVEL
 *
@@ -333,22 +333,14 @@ volatile VOID SearchPgSysThreadRoutine(IN OUT PINPUTCONTEXT_ICT pInputCtx)
 * @param NoParams
 *
 * Description: This routine is inserted _KAPC into the apc-queues of system threads using the PspCidTable (PsLookupThreadByThreadId) to iterate over threads.
-* 
-* =====================================================================================================================================================
-* 
-* If a thread replaces its Cid in the PspCidTable,
-* this will lead to "immunity" from this visor,
-* but since Pg does not hide its threads (you can directly enumerate system threads and directly detect threads that execute code from the RWX region),
-* if the kernel is not used by a rootkit or other methods of code execution in KernelSpace,
-* then you can be "conditionally" sure that this is a Pg system thread that executes WorkItem/Apc or is a full-fledged Pg thread).
 --*/
-VOID InitSearchPgSysThread(VOID)
+VOID InitSearchPgSysThreads(VOID)
 {
     #define ERROR_INIT_SEARCH_PG_SYS_THREAD 0x1ecf5472UI32
 
     CheckStatusTheiaCtx();
 
-    PVOID pStubRoutine = BuildStubApcRoutine(&SearchPgSysThreadRoutine);
+    PVOID pStubRoutine = BuildStubApcRoutine(&SearchUnbackedCurrStackCall);
 
     PVOID pExceptionObjThread = (PVOID)__readgsqword(0x188UI32);
     PUCHAR pCurrentThreadObj = NULL;
@@ -358,12 +350,12 @@ VOID InitSearchPgSysThread(VOID)
 
     if (__readcr8() > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] InitSearchPgSysThread: Inadmissible IRQL | IRQL: 0x%02X\n", __readcr8());
+        DbgLog("[TheiaPg <->] InitSearchPgSysThreads: Inadmissible IRQL | IRQL: 0x%02X\n", __readcr8());
 
         DieDispatchIntrnlError(ERROR_INIT_SEARCH_PG_SYS_THREAD);
     }
 
-               /* Skip IdleThread */
+    /* Skip IdleThread */
     for (ULONG32 TID = 4UI32; TID < 0xFFFFUI32; TID += 4UI32)
     {
         if (NT_SUCCESS(g_pTheiaCtx->pPsLookupThreadByThreadId((HANDLE)TID, &pCurrentThreadObj)))
@@ -391,7 +383,7 @@ VOID InitSearchPgSysThread(VOID)
         }
     }
 
-    DbgLog("[TheiaPg <+>] InitSearchPgSysThread: APCs inserted: 0x%hX\n\n", CounterInsertedAPCs);
- 
+    DbgLog("[TheiaPg <+>] InitSearchPgSysThreads: APCs inserted: 0x%hX\n\n", CounterInsertedAPCs);
+
     return;
 }

@@ -17,7 +17,7 @@ PVOID _HeurisSearchKdpcInCtx(IN PCONTEXT pCtx)
 
     UCHAR CurrIrql = (UCHAR)__readcr8();
 
-    if (!((CurrIrql <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pCtx) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pCtx)))
+    if (!((CurrIrql <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pCtx) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pCtx) || (((ULONG64)pCtx >> 47) != 0x1ffffUI64)))
     {
         DbgLog("[TheiaPg <->] HeurisSearchKdpcInCtx: Invalid Ctx\n\n");
 
@@ -58,7 +58,7 @@ BOOLEAN _IsSafeAddress(IN PVOID pVa)
 
     PKLDR_DATA_TABLE_ENTRY pCurrentNode = *(PVOID*)PsLoadedModuleList; ///< Skip dummy node.
 
-    if (!((__readcr8() <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pVa) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pVa) || !(((ULONG64)pVa >> 47) == 0x1ffffUI64)))
+    if (!((__readcr8() <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pVa) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pVa) || (((ULONG64)pVa >> 47) != 0x1ffffUI64)))
     {
         DbgLog("_IsSafeAddress [-] Invalid VA | VA: 0x%I64X\n", pVa);
 
@@ -181,7 +181,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
                  !((CurrIrql <= DISPATCH_LEVEL) ?
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(OptionalData[SPII_INDEX_OPTIONAL_DATA_SCIA]) :
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(OptionalData[SPII_INDEX_OPTIONAL_DATA_SCIA]))
-                 || !(((ULONG64)OptionalData[SPII_INDEX_OPTIONAL_DATA_SCIA] >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)OptionalData[SPII_INDEX_OPTIONAL_DATA_SCIA] >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid SCIA address | FlagsExecute: 0x%I32X\n", FlagsExecute);
 
@@ -196,7 +196,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
         else if (!pNameSection || !((CurrIrql <= DISPATCH_LEVEL) ?
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pNameSection) :
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pNameSection))
-                 || !(((ULONG64)pNameSection >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pNameSection >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid NameSection | FlagsExecute: 0x%I32X\n", FlagsExecute);
 
@@ -219,7 +219,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
             goto Exit;
         }
         else if (!pEprocessTrgtImg || !(IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pEprocessTrgtImg)
-                 || !(((ULONG64)pEprocessTrgtImg >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pEprocessTrgtImg >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid VA EprocessTrgtImg\n");
 
@@ -253,7 +253,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
             goto Exit;
         }
         else if (!pEprocessTrgtImg || !(IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pEprocessTrgtImg)
-                 || !(((ULONG64)pEprocessTrgtImg >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pEprocessTrgtImg >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid VA EprocessTrgtImg\n");
 
@@ -262,7 +262,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
         else if (!pNameSection || !((CurrIrql <= DISPATCH_LEVEL) ?
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pNameSection) :
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pNameSection))
-                 || !(((ULONG64)pNameSection >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pNameSection >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid VA NameSection\n");
 
@@ -271,12 +271,12 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
         else if ((!pSig || !((CurrIrql <= DISPATCH_LEVEL) ?
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pSig) :
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pSig))
-                 || !(((ULONG64)pSig >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pSig >> 47) != 0x1ffffUI64))
                                            ||
                  (!pMaskSig || !((CurrIrql <= DISPATCH_LEVEL) ?
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pMaskSig) :
                  (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pMaskSig)))
-                 || !(((ULONG64)pMaskSig >> 47) == 0x1ffffUI64))
+                 || (((ULONG64)pMaskSig >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid VA Sig/MaskSig\n");
 
@@ -316,7 +316,7 @@ PVOID _SearchPatternInImg(IN ULONG64 OptionalData[SPII_AMOUNT_OPTIONAL_DATA], IN
         if (!pModuleName || !((CurrIrql <= DISPATCH_LEVEL) ?
             (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pModuleName) :
             (IsLocalCtx ? SpiiCtx[SPII_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pModuleName))
-            || !(((ULONG64)pModuleName >> 47) == 0x1ffffUI64))
+            || (((ULONG64)pModuleName >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInImg: Invalid VA ModuleName\n");
 
@@ -605,7 +605,7 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_DATA],
     if (!pRegionSearch || !((CurrIrql <= DISPATCH_LEVEL) ?
         (IsLocalCtx ? SpirCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pRegionSearch) :
         (IsLocalCtx ? SpirCtx[SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pRegionSearch))
-        || !(((ULONG64)pRegionSearch >> 47) == 0x1ffffUI64))
+        || (((ULONG64)pRegionSearch >> 47) != 0x1ffffUI64))
     {
         DbgLog("[TheiaPg <->] _SearchPatternInRegion: Invalid RegionSearch\n");
 
@@ -617,12 +617,12 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_DATA],
         if ((!pSig || !((CurrIrql <= DISPATCH_LEVEL) ?
             (IsLocalCtx ? SpirCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pSig) :
             (IsLocalCtx ? SpirCtx[SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pSig))
-            || !(((ULONG64)pSig >> 47) == 0x1ffffUI64))
-                                       || 
+            || (((ULONG64)pSig >> 47) != 0x1ffffUI64))
+                                      || 
             (!pMaskSig || !((CurrIrql <= DISPATCH_LEVEL) ?
             (IsLocalCtx ? SpirCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pMaskSig) :
             (IsLocalCtx ? SpirCtx[SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pMaskSig)))
-            || !(((ULONG64)pMaskSig >> 47) == 0x1ffffUI64))
+            || (((ULONG64)pMaskSig >> 47) != 0x1ffffUI64))
         {
             DbgLog("[TheiaPg <->] _SearchPatternInRegion: Invalid Sig/MaskSig\n");
 
@@ -659,7 +659,7 @@ PVOID _SearchPatternInRegion(IN ULONG64 OptionalData[SPIR_AMOUNT_OPTIONAL_DATA],
     if (!LenStopSig || !((CurrIrql <= DISPATCH_LEVEL) ?
         (IsLocalCtx ? SpirCtx[SPII_LOCAL_CONTEXT_MMISADDRESSVALID] : g_pTheiaCtx->pMmIsAddressValid)(pStopSig) :
         (IsLocalCtx ? SpirCtx[SPIR_LOCAL_CONTEXT_MMISNONPAGEDSYSTEMADDRESSVALID] : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid)(pStopSig))
-        || !(((ULONG64)pStopSig >> 47) == 0x1ffffUI64))
+        || (((ULONG64)pStopSig >> 47) != 0x1ffffUI64))
     {
         DbgLog("[TheiaPg <->] _SearchPatternInRegion: Invalid StopSig/LenStopSig\n");
 

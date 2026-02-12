@@ -62,14 +62,8 @@
     <Filter Include="Source Files\_TheiaPg\_TheiaCore">
       <UniqueIdentifier>{d56ee18a-80dd-41cd-ba06-b1a9a5ceec3e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_TheiaPg\_TheiaCore\PgSysThreads">
-      <UniqueIdentifier>{5d628d88-cb38-4ab3-bc9a-9d0ed921ac01}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\_TheiaPg\_TheiaCore\PgUtils">
       <UniqueIdentifier>{a2abffca-d384-4b76-856c-5ff662da788d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\_TheiaCore\VisorRoutines">
-      <UniqueIdentifier>{560b2cb4-76cf-4fcb-8ef1-099e2b79efac}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\_TheiaPg\__InitTheiaCtx">
       <UniqueIdentifier>{5058af44-d7e6-4a9f-a596-7ca512d06a2d}</UniqueIdentifier>
@@ -80,7 +74,13 @@
     <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Voidx64">
       <UniqueIdentifier>{b3b9e10c-3de4-49ba-aea8-beade25e6e3a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_TheiaPg\CallTrmpln">
+    <Filter Include="Source Files\_TheiaPg\_TheiaCore\FltrRoutines">
+      <UniqueIdentifier>{560b2cb4-76cf-4fcb-8ef1-099e2b79efac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\_TheiaCore\SysThreads">
+      <UniqueIdentifier>{5d628d88-cb38-4ab3-bc9a-9d0ed921ac01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\CallHook">
       <UniqueIdentifier>{1135c96c-c8c8-4ac8-9823-a90ea5de5972}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -88,8 +88,8 @@
     <ClCompile Include="ImgEntry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VisorRoutines.c">
-      <Filter>Source Files\_TheiaPg\_TheiaCore\VisorRoutines</Filter>
+    <ClCompile Include="FltrRoutines.c">
+      <Filter>Source Files\_TheiaPg\_TheiaCore\FltrRoutines</Filter>
     </ClCompile>
     <ClCompile Include="GVars.c">
       <Filter>Source Files\Common\GVars</Filter>
@@ -97,11 +97,11 @@
     <ClCompile Include="Utils.c">
       <Filter>Source Files\Common\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="CallTrmpln.c">
-      <Filter>Source Files\_TheiaPg\CallTrmpln</Filter>
+    <ClCompile Include="CallHook.c">
+      <Filter>Source Files\_TheiaPg\CallHook</Filter>
     </ClCompile>
-    <ClCompile Include="PgSysThreads.c">
-      <Filter>Source Files\_TheiaPg\_TheiaCore\PgSysThreads</Filter>
+    <ClCompile Include="SysThreads.c">
+      <Filter>Source Files\_TheiaPg\_TheiaCore\SysThreads</Filter>
     </ClCompile>
     <ClCompile Include="InitTheiaCtx.c">
       <Filter>Source Files\_TheiaPg\__InitTheiaCtx</Filter>
@@ -135,11 +135,11 @@
     <ClInclude Include="Utils.h">
       <Filter>Source Files\Common\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="CallTrmpln.h">
-      <Filter>Source Files\_TheiaPg\CallTrmpln</Filter>
+    <ClInclude Include="CallHook.h">
+      <Filter>Source Files\_TheiaPg\CallHook</Filter>
     </ClInclude>
-    <ClInclude Include="PgSysThreads.h">
-      <Filter>Source Files\_TheiaPg\_TheiaCore\PgSysThreads</Filter>
+    <ClInclude Include="SysThreads.h">
+      <Filter>Source Files\_TheiaPg\_TheiaCore\SysThreads</Filter>
     </ClInclude>
     <ClInclude Include="InitTheiaCtx.h">
       <Filter>Source Files\_TheiaPg\__InitTheiaCtx</Filter>
@@ -171,8 +171,8 @@
     <ClInclude Include="Stacx64.h">
       <Filter>Source Files\_TheiaPg\__Hardware\_asm\Stacx64</Filter>
     </ClInclude>
-    <ClInclude Include="VisorRoutines.h">
-      <Filter>Source Files\_TheiaPg\_TheiaCore\VisorRoutines</Filter>
+    <ClInclude Include="FltrRoutines.h">
+      <Filter>Source Files\_TheiaPg\_TheiaCore\FltrRoutines</Filter>
     </ClInclude>
     <ClInclude Include="KMetaData.h">
       <Filter>Source Files\_TheiaPg\__InitTheiaCtx\KMetaData</Filter>

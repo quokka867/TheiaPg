@@ -4,4 +4,4 @@
 
 #define IS_SAFE_APC_SIGNATURE 0x9aecfd556bbd2312UI64
 
-extern VOID InitSearchPgSysThread(VOID);
+extern VOID InitSearchPgSysThreads(VOID);
