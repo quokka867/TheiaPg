@@ -14,9 +14,9 @@ Secure Boot: The module is conditionally compatible with Secure Boot, if use Map
 
 ## Additional Description
 
-Module img size with MSVC optimizations ~55kb.
+Module img size with MSVC optimizations ~60kb.
 
-The module was successfully tested on Windows 11 25H2 build: `26200.7705`.
+The module was successfully tested on Windows 11 25H2 build: `26200.7840`.
 
 # Result
 

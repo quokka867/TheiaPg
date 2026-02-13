@@ -86,7 +86,7 @@ static PVOID BuildStubApcRoutine(IN PVOID pRoutine)
 
     if (!pPageStub)
     {
-        DbgLog("[TheiaPg <->] BuildStubApcRoutine: Bad alloc page for PageStub\n");
+        DbgLog("[TheiaPg <->] BuildStubApcRoutine: Unsuccessful alloc page for PageStub\n");
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_APC_ROUTINE);
     }
@@ -127,7 +127,7 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 
     PCONTEXT pInternalCtx = (PCONTEXT)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
 
-    if (!pInternalCtx) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Bad alloc page for InternalCtx\n"); return; }
+    if (!pInternalCtx) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Unsuccessful alloc page for InternalCtx\n"); return; }
 
     pInternalCtx->ContextFlags = CONTEXT_CONTROL;
     pInternalCtx->Rax          = pInputCtx->rax;
@@ -149,9 +149,9 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
     pInternalCtx->Rip          = pInputCtx->rip;
     pInternalCtx->EFlags       = pInputCtx->Rflags;
 
-    PULONG64 pRetAddrsTrace = (PULONG64)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
+    PULONG64 pTraceRetAddrs = (PULONG64)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
 
-    if (!pRetAddrsTrace) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Bad alloc page for RetAddrsTrace\n"); return; }
+    if (!pTraceRetAddrs) { DbgLog("[TheiaPg <->] SearchUnbackedCurrStackCall: Unsuccessful alloc page for TraceRetAddrs\n"); return; }
 
     PUCHAR pCurrentObjThread = (PUCHAR)__readgsqword(0x188UI32);
     PUSHORT pCurrentTID = (PUSHORT)(pCurrentObjThread + (g_pTheiaCtx->TheiaMetaDataBlock.ETHREAD_Cid_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.CLIENT_ID_UniqueThread_OFFSET));
@@ -195,7 +195,7 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 
         if ((pInternalCtx->Rsp >= StackHigh) || (pInternalCtx->Rsp <= StackLow) || (pInternalCtx->Rip < 0xffff800000000000UI64)) { goto Exit; }
 
-        pRetAddrsTrace[i] = pInternalCtx->Rip;
+        pTraceRetAddrs[i] = pInternalCtx->Rip;
 
         if (!(_IsSafeAddress(pInternalCtx->Rip)))
         {
@@ -229,9 +229,9 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 
                 for (ULONG32 j = 0UI32; ; ++j)
                 {
-                    if (j == i) { DbgLog("%I32d frame: 0x%I64X <- unbacked\n\n", j, pRetAddrsTrace[j]); break; }
+                    if (j == i) { DbgLog("%I32d frame: 0x%I64X <- unbacked\n\n", j, pTraceRetAddrs[j]); break; }
 
-                    DbgLog("%I32d frame: 0x%I64X\n", j, pRetAddrsTrace[j]);
+                    DbgLog("%I32d frame: 0x%I64X\n", j, pTraceRetAddrs[j]);
                 }
 
             ) // }
@@ -312,7 +312,7 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 
     g_pTheiaCtx->pMmFreeIndependentPages(pInternalCtx, PAGE_SIZE, 0I64);
 
-    g_pTheiaCtx->pMmFreeIndependentPages(pRetAddrsTrace, PAGE_SIZE, 0I64);
+    g_pTheiaCtx->pMmFreeIndependentPages(pTraceRetAddrs, PAGE_SIZE, 0I64);
 
     g_pTheiaCtx->pMmFreeIndependentPages(pInputCtx->rcx, PAGE_SIZE, 0I64); ///< RCX: Address KAPC current ApcRoutine (Focused exclusively on Fastcall-x64)
 
@@ -336,54 +336,61 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 --*/
 VOID InitSearchPgSysThreads(VOID)
 {
-    #define ERROR_INIT_SEARCH_PG_SYS_THREAD 0x1ecf5472UI32
+    #define ERROR_INIT_SEARCH_PG_SYS_THREADS 0x1ecf5472UI32
 
     CheckStatusTheiaCtx();
+
+    UCHAR CurrIrql = (UCHAR)__readcr8();
 
     PVOID pStubRoutine = BuildStubApcRoutine(&SearchUnbackedCurrStackCall);
 
     PVOID pExceptionObjThread = (PVOID)__readgsqword(0x188UI32);
-    PUCHAR pCurrentThreadObj = NULL;
+    PUCHAR pCurrObjThread = NULL;
 
     PKAPC_TRUE pKAPC = NULL;
     USHORT CounterInsertedAPCs = 0UI16;
 
-    if (__readcr8() > DISPATCH_LEVEL)
+    if (CurrIrql > DISPATCH_LEVEL)
     {
-        DbgLog("[TheiaPg <->] InitSearchPgSysThreads: Inadmissible IRQL | IRQL: 0x%02X\n", __readcr8());
+        DbgLog("[TheiaPg <->] InitSearchPgSysThreads: Inadmissible IRQL | IRQL: 0x%02X\n", CurrIrql);
 
-        DieDispatchIntrnlError(ERROR_INIT_SEARCH_PG_SYS_THREAD);
+        DieDispatchIntrnlError(ERROR_INIT_SEARCH_PG_SYS_THREADS);
     }
 
     /* Skip IdleThread */
     for (ULONG32 TID = 4UI32; TID < 0xFFFFUI32; TID += 4UI32)
     {
-        if (NT_SUCCESS(g_pTheiaCtx->pPsLookupThreadByThreadId((HANDLE)TID, &pCurrentThreadObj)))
+        if (NT_SUCCESS(g_pTheiaCtx->pPsLookupThreadByThreadId((HANDLE)TID, &pCurrObjThread)))
         {
-            if (pCurrentThreadObj != pExceptionObjThread && g_pTheiaCtx->pPsIsSystemThread(pCurrentThreadObj))
+            if (pCurrObjThread != pExceptionObjThread && g_pTheiaCtx->pPsIsSystemThread(pCurrObjThread))
             {
-                pKAPC = (PKAPC_TRUE)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32);
+                if (!(pKAPC = (PKAPC_TRUE)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32)))
+                {
+                    DbgLog("[TheiaPg <->] InitSearchPgSysThreads: Unsuccessful alloc page for KAPC | IRQL: 0x%02X\n", CurrIrql);
 
-                g_pTheiaCtx->pKeInitializeApc(pKAPC, pCurrentThreadObj, NULL, pStubRoutine, NULL, NULL, KernelMode, NULL);
+                    DieDispatchIntrnlError(ERROR_INIT_SEARCH_PG_SYS_THREADS);
+                }
+
+                g_pTheiaCtx->pKeInitializeApc(pKAPC, pCurrObjThread, NULL, pStubRoutine, NULL, NULL, KernelMode, NULL);
 
                 pKAPC->RundownRoutine = NULL;
 
-                pKAPC->NormalContext = *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)); ///< Save current state Union-CombinedApcDisable.
+                pKAPC->NormalContext = *(PULONG32)(pCurrObjThread + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)); ///< Save current state Union-CombinedApcDisable.
 
-                *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)) = 0UI32; ///< CombinedApcDisable: OFF
+                *(PULONG32)(pCurrObjThread + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_CombinedApcDisable_OFFSET)) = 0UI32; ///< CombinedApcDisable: OFF
 
-                *(PULONG32)(pCurrentThreadObj + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_MiscFlags_OFFSET)) |= (0x1UI32 << 14UI32); ///< ApcQueueable: ON
+                *(PULONG32)(pCurrObjThread + (g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_MiscFlags_OFFSET)) |= (0x1UI32 << 14UI32); ///< ApcQueueable: ON
 
                 g_pTheiaCtx->pKeInsertQueueApc(pKAPC, IS_SAFE_APC_SIGNATURE, NULL, MAXIMUM_PRIORITY);
 
                 ++CounterInsertedAPCs;
             }
 
-            g_pTheiaCtx->pObfDereferenceObject(pCurrentThreadObj); ///< Kernel object counter decrement.
+            g_pTheiaCtx->pObfDereferenceObject(pCurrObjThread); ///< Kernel object counter decrement.
         }
     }
 
-    DbgLog("[TheiaPg <+>] InitSearchPgSysThreads: APCs inserted: 0x%hX\n\n", CounterInsertedAPCs);
+    DbgLog("[TheiaPg <+>] InitSearchPgSysThreads: APCs inserted: 0x%02X\n\n", CounterInsertedAPCs);
 
     return;
 }

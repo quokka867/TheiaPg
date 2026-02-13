@@ -116,7 +116,7 @@ static PVOID BuildStubCallHook(IN PICH_DATA pICH)
 
     if (!pPageStub)
     {
-        DbgLog("[TheiaPg <->] BuildStubCallHook: Bad alloc page for PageStub\n");
+        DbgLog("[TheiaPg <->] BuildStubCallHook: Unsuccessful alloc page for PageStub\n");
 
         DieDispatchIntrnlError(ERROR_BUILD_STUB_CALL_TRMPLN);
     }

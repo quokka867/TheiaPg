@@ -111,7 +111,7 @@ volatile VOID FltrKiExecuteAllDpcs(IN PINPUTCONTEXT_ICH pInputCtx)
 
                 HrdIndpnRWVMemory(&DataIndpnRWVMem);
             }
-            else { pCurrKDPC->DeferredRoutine = &Voidx64; }
+            else { pCurrKDPC->DeferredRoutine = &HrdVoidx64; }
             
             TypeDetect = 2UI8;
         }
@@ -253,7 +253,7 @@ volatile VOID FltrKiRetireDpcList(IN PINPUTCONTEXT_ICH pInputCtx)
                       __writecr3(__readcr3());
                     });
                 }
-                else { pCurrKDPC->DeferredRoutine = &Voidx64; }
+                else { pCurrKDPC->DeferredRoutine = &HrdVoidx64; }
 
                 TypeDetect = 2UI8;
             }
@@ -393,7 +393,7 @@ volatile VOID FltrExQueueWorkItem(IN OUT PINPUTCONTEXT_ICH pInputCtx)
 
     SAFE_ENABLE(CurrIF, CurrIrql, DISPATCH_LEVEL, pInternalCtx = (PCONTEXT)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32););
 
-    if (!pInternalCtx) { DbgLog("[TheiaPg <->] FltrExQueueWorkItem: Bad alloc page for InternalCtx\n"); return; }
+    if (!pInternalCtx) { DbgLog("[TheiaPg <->] FltrExQueueWorkItem: Unsuccessful alloc page for InternalCtx\n"); return; }
 
     pInternalCtx->ContextFlags = CONTEXT_CONTROL;
     pInternalCtx->Rax          = pInputCtx->rax;
@@ -579,18 +579,15 @@ volatile VOID FltrExQueueWorkItem(IN OUT PINPUTCONTEXT_ICH pInputCtx)
 
         }
 
-        if (!IsSleep)
+        if (!CurrIrql)
         {
-            if (CurrIrql < DISPATCH_LEVEL)
-            {
-                DbgLog("[TheiaPg <+>] FltrExQueueWorkItem: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
+            DbgLog("[TheiaPg <+>] FltrExQueueWorkItem: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
 
-                IsSleep = TRUE;
-            }
-            else
-            {
-                DbgLog("[TheiaPg <+>] FltrExQueueWorkItem: Unsuccessful enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);              
-            }
+            IsSleep = TRUE;
+        }
+        else
+        {
+            DbgLog("[TheiaPg <+>] FltrExQueueWorkItem: Unsuccessful enter to dead sleep | IRQL: 0x%02X\n\n", CurrIrql);
         }
     }
 
@@ -624,7 +621,7 @@ volatile VOID FltrExAllocatePool2(IN OUT PINPUTCONTEXT_ICH pInputCtx)
 
     SAFE_ENABLE(CurrIF, CurrIrql, DISPATCH_LEVEL, pInternalCtx = (PCONTEXT)g_pTheiaCtx->pMmAllocateIndependentPagesEx(PAGE_SIZE, -1I32, 0I64, 0I32););
 
-    if (!pInternalCtx) { DbgLog("[TheiaPg <->] FltrExAllocatePool2: Bad alloc page for InternalCtx\n"); return; }
+    if (!pInternalCtx) { DbgLog("[TheiaPg <->] FltrExAllocatePool2: Unsuccessful alloc page for InternalCtx\n"); return; }
 
     pInternalCtx->ContextFlags = CONTEXT_CONTROL;
     pInternalCtx->Rax          = pInputCtx->rax;
@@ -770,7 +767,7 @@ volatile VOID FltrExAllocatePool2(IN OUT PINPUTCONTEXT_ICH pInputCtx)
 
         if (!IsSleep)
         {
-            if (CurrIrql < DISPATCH_LEVEL)
+            if (!CurrIrql)
             {
                 DbgLog("[TheiaPg <+>] FltrExAllocatePool2: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
 
@@ -778,7 +775,7 @@ volatile VOID FltrExAllocatePool2(IN OUT PINPUTCONTEXT_ICH pInputCtx)
             }
             else
             {
-                DbgLog("[TheiaPg <+>] FltrExAllocatePool2: Unsuccessful enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
+                DbgLog("[TheiaPg <+>] FltrExAllocatePool2: Unsuccessful enter to dead sleep | IRQL: 0x%02X\n\n", CurrIrql);
 
                 if (pPgCtx) { *(PULONG32)((PUCHAR)pPgCtx + 0xA60) = -1UI32; } ///< Counter of unsuccessful memory allocation attempts in PgCtx.
 
@@ -816,8 +813,8 @@ volatile VOID FltrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICH pInputCtx)
 {
     CheckStatusTheiaCtx();
 
-    UCHAR CurrIrql = (UCHAR)__readcr8();
     BOOLEAN CurrIF = HrdGetIF();
+    UCHAR CurrIrql = (UCHAR)__readcr8();
     ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
     PCONTEXT pInternalCtx = NULL;
@@ -975,9 +972,9 @@ volatile VOID FltrKiCustomRecurseRoutineX(IN OUT PINPUTCONTEXT_ICH pInputCtx)
         }
     }
   
-    if (CurrIrql < DISPATCH_LEVEL)
+    if (!CurrIrql)
     {
-        DbgLog("[TheiaPg <+>] FltrKiCustomRecurseRoutineX: Enter to dead sleep... | IRQL: 0x%02X\n\n", CurrIrql);
+        DbgLog("[TheiaPg <+>] FltrKiCustomRecurseRoutineX: Enter to dead sleep | IRQL: 0x%02X\n\n", CurrIrql);
 
         IsSleep = TRUE;
     }

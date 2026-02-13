@@ -35,29 +35,11 @@
     <Filter Include="Source Files\_TheiaPg\DispatchIntrnlError\_asm">
       <UniqueIdentifier>{ce880839-75bb-4734-aa7d-17d670e5cc7a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware">
-      <UniqueIdentifier>{d56ca624-5a3d-4f34-9601-90fc21e62ca3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm">
-      <UniqueIdentifier>{091b0244-1f35-4632-a490-d8188867bbb1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\PhysMem">
-      <UniqueIdentifier>{d957917f-7537-43df-a0b9-20b69d8e0409}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\GetIF">
-      <UniqueIdentifier>{9eef7e52-b8a3-4693-a2a6-e2fe1a5be269}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\_TheiaPg\DispatchIntrnlError\_asm\DieBugCheck">
       <UniqueIdentifier>{ad031ce0-615e-4f0e-84cb-b1202c7bb6e7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Common\GVars">
       <UniqueIdentifier>{d7a1be69-9925-4171-9b4d-a199a148fd84}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Clacx64">
-      <UniqueIdentifier>{f8c04864-a1a7-4871-b042-be799da691a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Stacx64">
-      <UniqueIdentifier>{75e48972-901b-4a50-914f-5a02336839cb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\_TheiaPg\_TheiaCore">
       <UniqueIdentifier>{d56ee18a-80dd-41cd-ba06-b1a9a5ceec3e}</UniqueIdentifier>
@@ -71,9 +53,6 @@
     <Filter Include="Source Files\_TheiaPg\__InitTheiaCtx\KMetaData">
       <UniqueIdentifier>{c970fa82-3fea-4453-b26e-6369514b07ad}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\_TheiaPg\__Hardware\_asm\Voidx64">
-      <UniqueIdentifier>{b3b9e10c-3de4-49ba-aea8-beade25e6e3a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\_TheiaPg\_TheiaCore\FltrRoutines">
       <UniqueIdentifier>{560b2cb4-76cf-4fcb-8ef1-099e2b79efac}</UniqueIdentifier>
     </Filter>
@@ -82,6 +61,18 @@
     </Filter>
     <Filter Include="Source Files\_TheiaPg\CallHook">
       <UniqueIdentifier>{1135c96c-c8c8-4ac8-9823-a90ea5de5972}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\___Hardware">
+      <UniqueIdentifier>{d56ca624-5a3d-4f34-9601-90fc21e62ca3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\___Hardware\_asm">
+      <UniqueIdentifier>{091b0244-1f35-4632-a490-d8188867bbb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\___Hardware\PhysMem">
+      <UniqueIdentifier>{d957917f-7537-43df-a0b9-20b69d8e0409}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\_TheiaPg\___Hardware\_asm\x64Utils">
+      <UniqueIdentifier>{d7a150c1-cf99-41ac-9430-cd2da5ad2966}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -113,7 +104,7 @@
       <Filter>Source Files\_TheiaPg</Filter>
     </ClCompile>
     <ClCompile Include="PhysMem.c">
-      <Filter>Source Files\_TheiaPg\__Hardware\PhysMem</Filter>
+      <Filter>Source Files\_TheiaPg\___Hardware\PhysMem</Filter>
     </ClCompile>
     <ClCompile Include="PgUtils.c">
       <Filter>Source Files\_TheiaPg\_TheiaCore\PgUtils</Filter>
@@ -154,10 +145,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PhysMem.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\PhysMem</Filter>
-    </ClInclude>
-    <ClInclude Include="GetIF.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\GetIF</Filter>
+      <Filter>Source Files\_TheiaPg\___Hardware\PhysMem</Filter>
     </ClInclude>
     <ClInclude Include="DieBugCheck.h">
       <Filter>Source Files\_TheiaPg\DispatchIntrnlError\_asm\DieBugCheck</Filter>
@@ -165,37 +153,22 @@
     <ClInclude Include="PgUtils.h">
       <Filter>Source Files\_TheiaPg\_TheiaCore\PgUtils</Filter>
     </ClInclude>
-    <ClInclude Include="Clacx64.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Clacx64</Filter>
-    </ClInclude>
-    <ClInclude Include="Stacx64.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Stacx64</Filter>
-    </ClInclude>
     <ClInclude Include="FltrRoutines.h">
       <Filter>Source Files\_TheiaPg\_TheiaCore\FltrRoutines</Filter>
     </ClInclude>
     <ClInclude Include="KMetaData.h">
       <Filter>Source Files\_TheiaPg\__InitTheiaCtx\KMetaData</Filter>
     </ClInclude>
-    <ClInclude Include="Voidx64.h">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Voidx64</Filter>
+    <ClInclude Include="x64Utils.h">
+      <Filter>Source Files\_TheiaPg\___Hardware\_asm\x64Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="GetIF.asm">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\GetIF</Filter>
-    </MASM>
     <MASM Include="DieBugCheck.asm">
       <Filter>Source Files\_TheiaPg\DispatchIntrnlError\_asm\DieBugCheck</Filter>
     </MASM>
-    <MASM Include="Clacx64.asm">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Clacx64</Filter>
-    </MASM>
-    <MASM Include="Stacx64.asm">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Stacx64</Filter>
-    </MASM>
-    <MASM Include="Voidx64.asm">
-      <Filter>Source Files\_TheiaPg\__Hardware\_asm\Voidx64</Filter>
+    <MASM Include="x64Utils.asm">
+      <Filter>Source Files\_TheiaPg\___Hardware\_asm\x64Utils</Filter>
     </MASM>
   </ItemGroup>
 </Project>

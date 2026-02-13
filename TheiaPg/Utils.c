@@ -1,7 +1,7 @@
 #include "LinkHeader.h"
 
 /*++
-* Routine: HeurisSearchKdpcInCtx
+* Routine: _HeurisSearchKdpcInCtx
 *
 * MaxIRQL: Any level (If IRQL > DISPATCH_LEVEL then the input address must be NonPaged)
 *
@@ -19,7 +19,7 @@ PVOID _HeurisSearchKdpcInCtx(IN PCONTEXT pCtx)
 
     if (!((CurrIrql <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pCtx) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pCtx) || (((ULONG64)pCtx >> 47) != 0x1ffffUI64)))
     {
-        DbgLog("[TheiaPg <->] HeurisSearchKdpcInCtx: Invalid Ctx\n\n");
+        DbgLog("[TheiaPg <->] _HeurisSearchKdpcInCtx: Invalid Ctx\n\n");
 
         return NULL;
     }
@@ -60,7 +60,7 @@ BOOLEAN _IsSafeAddress(IN PVOID pVa)
 
     if (!((__readcr8() <= DISPATCH_LEVEL) ? g_pTheiaCtx->pMmIsAddressValid(pVa) : g_pTheiaCtx->pMmIsNonPagedSystemAddressValid(pVa) || (((ULONG64)pVa >> 47) != 0x1ffffUI64)))
     {
-        DbgLog("_IsSafeAddress [-] Invalid VA | VA: 0x%I64X\n", pVa);
+        DbgLog("[TheiaPg <->] _IsSafeAddress: Invalid VA | VA: 0x%I64X\n", pVa);
 
         DieDispatchIntrnlError(ERROR_IS_SAFE_ADDRESS);
     }

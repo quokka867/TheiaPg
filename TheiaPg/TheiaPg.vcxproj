@@ -152,8 +152,7 @@
     <ClCompile Include="PgUtils.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Clacx64.h" />
-    <ClInclude Include="GetIF.h" />
+    <ClInclude Include="x64Utils.h" />
     <ClInclude Include="IA32.h" />
     <ClInclude Include="KMetaData.h" />
     <ClInclude Include="PhysMem.h" />
@@ -167,17 +166,12 @@
     <ClInclude Include="FltrRoutines.h" />
     <ClInclude Include="CallHook.h" />
     <ClInclude Include="DieBugCheck.h" />
-    <ClInclude Include="Stacx64.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PgUtils.h" />
-    <ClInclude Include="Voidx64.h" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="Clacx64.asm" />
-    <MASM Include="GetIF.asm" />
     <MASM Include="DieBugCheck.asm" />
-    <MASM Include="Stacx64.asm" />
-    <MASM Include="Voidx64.asm" />
+    <MASM Include="x64Utils.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

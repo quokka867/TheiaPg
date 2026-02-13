@@ -5,7 +5,7 @@ extern VOID TheiaEntry(VOID);
 /*++
 * Routine: ImgEntry
 *
-* MaxIRQL: Any level
+* MaxIRQL: DISPATCH_LEVEL
 *
 * Public/Private: Public
 *

@@ -490,7 +490,7 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                                  //
     if (!g_pTheiaCtx)                                                                                                                                                            //
     {                                                                                                                                                                            //
-        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for gTheiaCtx\n");                                                                                                //
+        DbgLog("[TheiaPg <->] InitTheiaContext: Unsuccessful alloc page for gTheiaCtx\n");                                                                                       //
                                                                                                                                                                                  //
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                                        //
     }                                                                                                                                                                            //
@@ -501,7 +501,7 @@ VOID InitTheiaContext(VOID)
     
     if (!g_pDieNonLargePage)                                                                                                                                                     
     {                                                                                                                                                                           
-        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for gDieNonLargePage\n");                                                                                       
+        DbgLog("[TheiaPg <->] InitTheiaContext: Unsuccessful alloc page for gDieNonLargePage\n");                                                                                       
         
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                                       
     }
@@ -510,7 +510,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pSpiiNonLargePage)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for gSpiiNonLargePage\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: Unsuccessful alloc page for gSpiiNonLargePage\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -527,7 +527,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiExecuteAllDpcs)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiExecuteAllDpcs not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiExecuteAllDpcs not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -536,7 +536,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiRetireDpcList)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiRetireDpcList not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiRetireDpcList not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -545,7 +545,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiDeliverApc)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiDeliverApc not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiDeliverApc not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -554,7 +554,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiCustomRecurseRoutineX)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiCustomRecurseRoutineX not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiCustomRecurseRoutineX not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -563,7 +563,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiBalanceSetManagerDeferredRoutine)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiBalanceSetManagerDeferredRoutine not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiBalanceSetManagerDeferredRoutine not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -572,7 +572,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiBalanceSetManagerPeriodicDpc)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiBalanceSetManagerPeriodicDpc not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiBalanceSetManagerPeriodicDpc not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -589,7 +589,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiBalanceSetManagerPeriodicEvent)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiBalanceSetManagerPeriodicEvent not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiBalanceSetManagerPeriodicEvent not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -606,7 +606,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiMcaDeferredRecoveryService)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiMcaDeferredRecoveryService not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiMcaDeferredRecoveryService not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -615,7 +615,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pFsRtlUninitializeSmallMcb)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va FsRtlUninitializeSmallMcb not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA FsRtlUninitializeSmallMcb not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -624,7 +624,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pFsRtlTruncateSmallMcb)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va FsRtlTruncateSmallMcb not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA FsRtlTruncateSmallMcb not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -633,7 +633,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiDecodeMcaFault)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiDecodeMcaFault not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiDecodeMcaFault not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -642,7 +642,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pCcBcbProfiler)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va CcBcbProfiler not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA CcBcbProfiler not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -651,7 +651,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pCcBcbProfiler2)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va CcBcbProfiler2 not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA CcBcbProfiler2 not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -660,7 +660,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pKiDispatchCallout)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va KiDispatchCallout not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA KiDispatchCallout not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);;
     }
@@ -669,7 +669,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pMmAllocateIndependentPagesEx)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va MmAllocateIndependentPagesEx not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA MmAllocateIndependentPagesEx not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -678,7 +678,7 @@ VOID InitTheiaContext(VOID)
 
     if (!g_pTheiaCtx->pMmFreeIndependentPages)
     {
-        DbgLog("[TheiaPg <->] InitTheiaContext: Base-Va MmFreeIndependentPages not found\n");
+        DbgLog("[TheiaPg <->] InitTheiaContext: BaseVA MmFreeIndependentPages not found\n");
 
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);
     }
@@ -700,7 +700,7 @@ VOID InitTheiaContext(VOID)
     //
     // Initialization A3-Block
     //
-    for(ULONG32 i = 0UI32; i < 52UI32; ++i) { g_pTheiaCtx->PgXorRoutineSig[i] = PgXorRoutineSig[i]; } 
+    memcpy(&g_pTheiaCtx->PgXorRoutineSig, &PgXorRoutineSig, sizeof PgXorRoutineSig);
 
     //
     // Initialization A4-Block
@@ -796,7 +796,7 @@ VOID InitTheiaContext(VOID)
                                                                                                                                                                                                                                                                     //
     if (!pKdDebuggerDataBlockDec)                                                                                                                                                                                                                                   //
     {                                                                                                                                                                                                                                                               // 
-        DbgLog("[TheiaPg <->] InitTheiaContext: Bad alloc page for KdDebuggerDataBlockDec\n");                                                                                                                                                                      //
+        DbgLog("[TheiaPg <->] InitTheiaContext: Unsuccessful alloc page for KdDebuggerDataBlockDec\n");                                                                                                                                                             //
                                                                                                                                                                                                                                                                     //
         DieDispatchIntrnlError(ERROR_INIT_THEIA_CONTEXT);                                                                                                                                                                                                           //
     }                                                                                                                                                                                                                                                               //
