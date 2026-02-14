@@ -2,4 +2,4 @@
 
 #include "LinkHeader.h"
 
-extern DECLSPEC_NORETURN VOID DieBugCheck(PTHEIA_METADATA_BLOCK pTMDB, ULONG32 InternalCode);
+extern DECLSPEC_NORETURN VOID DieBugCheck(PTHEIA_METADATA_BLOCK pTMDB, PVOID pCurrStackHigh, ULONG32 InternalCode);

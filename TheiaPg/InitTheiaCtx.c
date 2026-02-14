@@ -64,6 +64,7 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KPRCB_AcpiReserved                        = 0xe0UI32;
         pTheiaMetaDataBlock->KPRCB_DpcData0_OFFSET                     = 0x3840UI32;
         pTheiaMetaDataBlock->KPRCB_DpcData1_OFFSET                     = 0x3870UI32;
+        pTheiaMetaDataBlock->KPRCB_DpcStack_OFFSET                     = 0x38a0UI32;
         pTheiaMetaDataBlock->KPRCB_TimerTable                          = 0x4100UI32;
 
         pTheiaMetaDataBlock->ETHREAD_Cid_OFFSET                        = 0x508UI32;
@@ -82,17 +83,14 @@ VOID InitTheiaMetaDataBlock(IN OUT PTHEIA_METADATA_BLOCK pTheiaMetaDataBlock)
         pTheiaMetaDataBlock->KTHREAD_WaitTime_OFFSET                   = 0x1b4UI32;
         pTheiaMetaDataBlock->KTHREAD_KernelTime_OFFSET                 = 0x28cUI32;
         pTheiaMetaDataBlock->KTHREAD_CombinedApcDisable_OFFSET         = 0x1e4UI32;
+        pTheiaMetaDataBlock->KTHREAD_Process_OFFSET                    = 0x220UI32;
         pTheiaMetaDataBlock->KTHREAD_ThreadListEntry_OFFSET            = 0x2f8UI32;
 
         pTheiaMetaDataBlock->KAPC_STATE_ApcListHead0_OFFSET            = 0x0UI32;
         pTheiaMetaDataBlock->KAPC_STATE_ApcListHead1_OFFSET            = 0x10UI32;
 
-        pTheiaMetaDataBlock->EPROCESS_KPROCESS_OFFSET                  = 0x00UI32;
-        pTheiaMetaDataBlock->EPROCESS_ActiveProcessLinks_OFFSET        = 0x1d8UI32;
         pTheiaMetaDataBlock->EPROCESS_Peb_OFFSET                       = 0x2e0UI32;
-        pTheiaMetaDataBlock->EPROCESS_ImageFileName_OFFSET             = 0x338UI32;
         pTheiaMetaDataBlock->EPROCESS_ThreadListHead                   = 0x370UI32;
-        pTheiaMetaDataBlock->EPROCESS_ProtectionEprocess_OFFSET        = 0x5faUI32;
 
         pTheiaMetaDataBlock->KPROCESS_DirectoryTableBase_OFFSET        = 0x28UI32;
 

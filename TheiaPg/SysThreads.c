@@ -238,7 +238,7 @@ static volatile VOID SearchUnbackedCurrStackCall(IN OUT PINPUTCONTEXT_STUBAPCROU
 
             DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Handling exit phase...\n\n");
 
-            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect possibly PgCaller | pPgCtx: 0x%I64X\n\n", (pPgCtx = SearchPgCtxInCtx(pInternalCtx)));
+            DbgLog("[TheiaPg <+>] SearchUnbackedCurrStackCall: Detect possibly PgCaller | PgCtx: 0x%I64X\n\n", (pPgCtx = SearchPgCtxInCtx(pInternalCtx)));
 
             if (pPgCtx)
             {

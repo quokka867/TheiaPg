@@ -4,14 +4,14 @@ volatile BOOLEAN g_DieDeadlockMethod = FALSE;
 
 volatile PVOID g_pDieIndirectCallBugCheck = NULL;
 
-volatile PVOID g_DieNtosHeadThreadList = NULL;
-
 volatile PVOID g_pDieNonLargePage = NULL;
+
+volatile PVOID g_pDieDummyObjThread = NULL;
 
 /*++
 * Routine: DieDispatchIntrnlError
 *
-* MaxIRQL: Any level
+* MaxIRQL: Any level (without IST)
 *
 * Public/Private: Public
 *
@@ -36,6 +36,16 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 	UNICODE_STRING StrKeBugCheckEx = { 0 };
 
 	ULONG64 RelatedDataSPIR[4] = { 0 };
+
+	PVOID pCurrPrcb = (PVOID)__readgsqword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_CurrentPrcb_OFFSET);
+
+	PVOID pCurrStackHigh = NULL, pCurrStackLow = NULL;
+
+	PVOID pStackAddr = (PVOID)&pStackAddr;
+
+	PLIST_ENTRY pCurrThreadListHead = NULL;
+
+	PLIST_ENTRY pCurrObjThread = NULL;
 
 	if (!(_interlockedbittestandset(&SynchBarrier0, 0I32)))
 	{
@@ -85,9 +95,54 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 
 		DbgLog("[TheiaPg <!>] DieDispatchIntrnlError: DieIndirectCallBugCheck: 0x%I64X\n", g_pDieIndirectCallBugCheck);
 
-		g_DieNtosHeadThreadList = ((PUCHAR)PsInitialSystemProcess + (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+		pCurrStackHigh = *(PVOID*)((PUCHAR)(*(PVOID*)((PUCHAR)pCurrPrcb + (IsLocalCtx ? pLocalTMDB->KPRCB_CurrentThread_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_CurrentThread_OFFSET))) + (IsLocalCtx ? pLocalTMDB->KTHREAD_InitialStack_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_InitialStack_OFFSET));
 
-		DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
+		pCurrStackLow = *(PVOID*)((PUCHAR)(*(PVOID*)((PUCHAR)pCurrPrcb + (IsLocalCtx ? pLocalTMDB->KPRCB_CurrentThread_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_CurrentThread_OFFSET))) + (IsLocalCtx ? pLocalTMDB->KTHREAD_StackLimit_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KTHREAD_StackLimit_OFFSET));
+
+		if (((ULONG64)pStackAddr > (ULONG64)pCurrStackHigh) || ((ULONG64)pStackAddr < (ULONG64)pCurrStackLow))
+		{
+			pCurrStackHigh = *(PVOID*)((PUCHAR)pCurrPrcb + (IsLocalCtx ? pLocalTMDB->KPRCB_DpcStack_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_DpcStack_OFFSET));
+		}
+
+		pCurrStackLow = NULL;
+
+		pCurrThreadListHead = ((PUCHAR)PsInitialSystemProcess + (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+
+		pCurrObjThread = pCurrThreadListHead->Flink;
+
+		for (UCHAR i = (UCHAR)((__rdtsc() % 256) + 32), j = 0UI8; ; --i)
+		{
+			pCurrObjThread = pCurrObjThread->Flink;
+
+			if (!i)
+			{
+				if (pCurrObjThread == pCurrThreadListHead)
+				{
+					i += 8;
+
+					if (j < 8)
+					{
+						j++;
+					}
+					else
+					{
+						pCurrObjThread = pCurrObjThread->Flink;
+
+						if (pCurrObjThread == pCurrThreadListHead)
+						{
+							pCurrObjThread = pCurrObjThread->Flink;
+						}
+
+						break;
+					}
+				}
+				else { break; }
+			}
+		}
+
+		g_pDieDummyObjThread = (PVOID)((PUCHAR)pCurrObjThread - (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+
+		DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), pCurrStackHigh, InternalCode);
 	}
 	else
 	{
@@ -99,15 +154,15 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 			{
 				goto SkipInitDeadLock;
 
-			InitDeadLock:
+			    InitDeadLock:
 
 				DbgLog("[TheiaPg <!>] DieDispatchIntrnlError: Deadlocking CPU\n");
 
 				g_DieDeadlockMethod = TRUE;
 
-			SkipInitDeadLock:
+			    SkipInitDeadLock:
 
-				DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), InternalCode);
+				DieBugCheck(NULL, NULL, NULL);
 			}
 
 			_mm_pause();
