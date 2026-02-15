@@ -106,7 +106,7 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 
 		pCurrStackLow = NULL;
 
-		pCurrThreadListHead = ((PUCHAR)PsInitialSystemProcess + (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+		pCurrThreadListHead = ((PUCHAR)PsInitialSystemProcess + (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead_OFFSET));
 
 		pCurrObjThread = pCurrThreadListHead->Flink;
 
@@ -140,7 +140,7 @@ DECLSPEC_NORETURN VOID DieDispatchIntrnlError(IN ULONG32 InternalCode)
 			}
 		}
 
-		g_pDieDummyObjThread = (PVOID)((PUCHAR)pCurrObjThread - (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead));
+		g_pDieDummyObjThread = (PVOID)((PUCHAR)pCurrObjThread - (IsLocalCtx ? pLocalTMDB->EPROCESS_ThreadListHead_OFFSET : g_pTheiaCtx->TheiaMetaDataBlock.EPROCESS_ThreadListHead_OFFSET));
 
 		DieBugCheck((IsLocalCtx ? pLocalTMDB : &g_pTheiaCtx->TheiaMetaDataBlock), pCurrStackHigh, InternalCode);
 	}

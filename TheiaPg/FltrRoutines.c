@@ -154,7 +154,7 @@ volatile VOID FltrKiRetireDpcList(IN PINPUTCONTEXT_ICH pInputCtx)
     ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
     BOOLEAN CurrIF = FALSE;
 
-    PKTIMER_TABLE_ENTRY pCurrKTimerTableEntry = (PKTIMER_TABLE_ENTRY) & (((PKTIMER_TABLE)(__readgsqword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_CurrentPrcb_OFFSET) + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_TimerTable))->TimerEntries);
+    PKTIMER_TABLE_ENTRY pCurrKTimerTableEntry = (PKTIMER_TABLE_ENTRY) & (((PKTIMER_TABLE)(__readgsqword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_CurrentPrcb_OFFSET) + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_TimerTable_OFFSET))->TimerEntries);
     PKTIMER pCurrKTIMER = NULL;
 
     PKDPC pCurrKDPC= NULL;

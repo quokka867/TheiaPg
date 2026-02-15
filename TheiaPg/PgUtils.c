@@ -56,8 +56,8 @@ VOID SearchKdpcInPgPrcbFields(VOID)
 	BOOLEAN CurrIF = HrdGetIF();
 	ULONG32 CurrCoreNum = (ULONG32)__readgsdword(g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_Number_OFFSET);
 
-	ULONG32 GsOffsetHalReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_HalReserved);
-	ULONG32 GsOffsetAcpiReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_AcpiReserved);
+	ULONG32 GsOffsetHalReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_HalReserved_OFFSET);
+	ULONG32 GsOffsetAcpiReserved = (g_pTheiaCtx->TheiaMetaDataBlock.KPCR_Prcb_OFFSET + g_pTheiaCtx->TheiaMetaDataBlock.KPRCB_AcpiReserved_OFFSET);
 
 	PKDPC pCurrentCheckKDPC = NULL;
 
